@@ -1,0 +1,21 @@
+/* ============================================================
+   ECLIPSE OS — PLUGINS · host integration
+   Loaded ONLY by the app shell (EclipseOS.html). Scoped under .main
+   so it is inert anywhere else. Handles the home ⇄ plugins view
+   switch — mirror of automations/au-host.css. The view itself is
+   the Plugins module (#pgRoot, .pg-view).
+   ============================================================ */
+.main .plugins-view { display: none; }
+.main.show-plugins { min-width: 0; overflow: hidden; }
+.main.show-plugins > .main-toolbar,
+.main.show-plugins > .center,
+.main.show-plugins > .env-panel,
+.main.show-plugins > .work-panel,
+.main.show-plugins > .work-resizer { display: none !important; }
+/* a chat's open side panel must not squeeze the plugins view */
+.main.show-plugins { padding-right: 0 !important; }
+.main.show-plugins .plugins-view {
+  display: flex; flex-direction: column; flex: 1;
+  width: auto; height: auto;
+  min-width: 0; min-height: 0; position: relative;
+}

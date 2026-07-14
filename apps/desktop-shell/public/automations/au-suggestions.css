@@ -1,0 +1,68 @@
+/* ============================================================
+   ECLIPSE OS — AUTOMATION SUGGESTIONS · reusable template section
+   Companion to automations/au-suggestions.js (AU_SUG.render).
+   Same visual language as the Automations page: flat hover-wash
+   rows, --radius-card corners, the page's type ramp, and the
+   hover-reveal affordance pattern (like the row "…" menu).
+   GLOBAL tokens only — no .a2-view module tokens — so the
+   section drops into any Eclipse page and follows every theme.
+   ============================================================ */
+
+.au-sug { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--line-soft); }
+.au-sug.no-divider { margin-top: 0; padding-top: 0; border-top: 0; }
+.au-sug-bar { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+.au-sug-head {
+  margin: 0;
+  font-family: var(--font-ui); font-size: 17px; font-weight: 600;
+  letter-spacing: -0.3px; color: var(--txt-bright);
+}
+/* reload — quiet icon button, matches the row "…" affordance */
+.au-sug-reload {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; margin-left: auto;
+  border: 0; border-radius: var(--radius-btn); background: transparent;
+  color: var(--icon-idle); cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 130ms var(--spring-s);
+}
+.au-sug-reload svg { display: block; width: 16px; height: 16px; }
+.au-sug-reload:hover { background: var(--hover); color: var(--icon-hover); }
+.au-sug-reload:active { transform: scale(0.9); }
+.au-sug-reload.spin svg { animation: au-sug-spin 480ms var(--spring-m); }
+@keyframes au-sug-spin { from { transform: rotate(0); } to { transform: rotate(-360deg); } }
+.au-sug-list { display: flex; flex-direction: column; margin-top: 10px; }
+/* fresh window fades/rises in on reload */
+.au-sug-cycle .au-sug-row { animation: au-sug-in 320ms var(--spring-m) both; }
+.au-sug-cycle .au-sug-row:nth-child(2) { animation-delay: 45ms; }
+.au-sug-cycle .au-sug-row:nth-child(3) { animation-delay: 90ms; }
+@keyframes au-sug-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+/* row — icon · (name + schedule / description) · hover arrow */
+.au-sug-row {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;
+  padding: 13px 10px; width: 100%;
+  border: 0; border-radius: var(--radius-card); background: transparent; text-align: left;
+  font-family: var(--font-ui); cursor: pointer;
+  transition: background 130ms ease;
+}
+.au-sug-row:hover { background: var(--hover); }
+.au-sug-row:active { background: var(--press); }
+
+/* icon tint — muted oklch, hue per suggestion, brighter on dark */
+.au-sug-ic { display: flex; margin-top: 1px; color: oklch(0.55 0.11 var(--sug-h, 250)); }
+[data-appearance="dark"] .au-sug-ic { color: oklch(0.74 0.09 var(--sug-h, 250)); }
+.au-sug-ic svg { display: block; width: 19px; height: 19px; }
+
+.au-sug-main { min-width: 0; display: flex; flex-direction: column; }
+.au-sug-l1 { display: flex; align-items: baseline; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.au-sug-l1 .nm { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; color: var(--txt-bright); }
+.au-sug-l1 .when { font-size: 12.5px; color: var(--txt-dim); }
+.au-sug-desc { margin-top: 4px; font-size: 12.5px; font-style: italic; line-height: 1.5; color: var(--txt-dim); text-wrap: pretty; }
+
+/* hover-revealed "use" arrow — same reveal pattern as the row "…" menu */
+.au-sug-go { display: flex; align-self: center; color: var(--icon-idle); opacity: 0; transform: translateX(-3px); transition: opacity 130ms ease, transform 200ms var(--spring-m); }
+.au-sug-go svg { display: block; width: 15px; height: 15px; }
+.au-sug-row:hover .au-sug-go, .au-sug-row:focus-visible .au-sug-go { opacity: 1; transform: none; }
+
+/* reduced motion */
+html[data-motion="reduce"] .au-sug *, html[data-motion="reduce"] .au-sug-go { transition: none !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) { .au-sug *, .au-sug-go { transition: none !important; animation: none !important; } }

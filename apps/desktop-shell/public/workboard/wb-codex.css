@@ -1,0 +1,123 @@
+/* ============================================================
+   ECLIPSE OS — WORKBOARD · Codex-style skin
+   Loaded ONLY by "Workboard 2.html", AFTER wb-core.css. The same
+   plainer look ratified on Automations + Plugins, applied to the
+   board: sans chrome, big plain title, bordered search field,
+   hover-wash pill filters, quiet bordered buttons, and a FLAT
+   board field — no gray mat container, hairline-bordered cards
+   instead of shadow lifts. All color via tokens; the module's
+   markup and behavior are untouched.
+   ============================================================ */
+
+/* fill the shell's main pane */
+.workboard-view {
+  flex: 1; min-height: 0;
+  /* the board mat is a large surface — pin its radii to the soft ramp
+     even when the host page tunes the mat tokens for smaller wells
+     (EclipseOS scopes --mat-panel-radius down for the composer tray) */
+  --mat-radius: var(--radius-mat);
+  --mat-panel-radius: var(--radius-card);
+}
+
+/* ============ TITLEBAR — big plain sans title ============ */
+.wb-titlebar { padding: 24px 30px 18px 32px; }
+.wb-page-h1 { font-size: 27px; font-weight: 600; letter-spacing: -0.5px; }
+.wb-page-sub { font-size: 13.5px; margin-top: 3px; }
+
+/* live meta line — plain text, no chip shell */
+.wb-meta-line { background: transparent; border: 0; padding: 0 6px; }
+
+/* board switcher + bell — quiet bordered / bare */
+.wb-switch { background: var(--bg-card); border: 1px solid var(--line-soft); }
+.wb-switch:hover { background: var(--hover); }
+.wb-tbtn.icon { background: transparent; }
+.wb-tbtn.icon:hover { background: var(--hover); }
+
+/* ============ COMMAND BAR ============ */
+.wb-commandbar { padding: 0 30px 16px 32px; border-bottom: 0; }
+
+/* search — bordered field, focus halo (§15 ruling) */
+.wb-search {
+  background: var(--input-bg);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-field);
+  height: 36px; flex: 0 1 262px;
+}
+.wb-search:focus-within { box-shadow: var(--focus-halo); border-color: var(--line-strong); }
+
+/* filters — transparent pills, active gets the ink (like the ftabs) */
+.wb-filter { background: transparent; }
+.wb-filter:hover { background: var(--hover); }
+.wb-filter.active-filter { background: var(--active-bg); color: var(--txt-bright); font-weight: 600; }
+.wb-clear { background: transparent; }
+
+/* toggles — unchanged shape, just no fill until hover (already true) */
+
+/* segmented view toggle — quiet, traveling ink stays */
+.wb-seg { background: transparent; border: 1px solid var(--line-soft); }
+.wb-seg-pill { background: var(--active-bg); }
+.wb-seg-btn.on { color: var(--txt-bright); }
+
+/* dispatcher + refresh — quiet bordered pills */
+.wb-dispatch { background: transparent; border: 1px solid var(--line-soft); }
+.wb-dispatch:hover { background: var(--hover); }
+.wb-icon-btn { background: transparent; }
+.wb-icon-btn:hover { background: var(--hover); }
+
+/* new card — bordered button, like Create on Automations */
+.wb-newbtn {
+  background: var(--bg-card); color: var(--txt-primary);
+  border: 1px solid var(--line-soft);
+  font-weight: 500;
+}
+.wb-newbtn:hover { background: var(--hover); }
+
+/* ============ BOARD FIELD — kanban keeps the Mat (core default) ============
+   The gray recessed container from wb-core.css stays; the flat cards
+   below rest on it with hairlines instead of shadow lifts. */
+
+/* lane heads — plain sans, bare counts (no brackets) */
+.wb-lane-name { font-size: 13px; font-weight: 600; color: var(--txt-primary); }
+.wb-lane-count { color: var(--txt-faint); }
+.wb-lane-count::before, .wb-lane-count::after { content: none; }
+
+/* ============ CARDS — proper Mat panels (hairline + gentle lift) ============ */
+[data-wb-style="flat"] .wb-lane-cards { padding: 4px 3px 14px 3px; gap: 10px; }
+[data-wb-style="flat"] .wb-card {
+  border: 1px solid var(--wb-line-soft);
+  border-radius: var(--mat-panel-radius);
+  padding: 14px 16px 12px;
+  box-shadow: var(--mat-lift);
+}
+[data-wb-style="flat"] .wb-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--mat-lift-hover);
+  transform: translateY(-1px);
+}
+[data-wb-style="flat"] .wb-card:active { transform: scale(0.98); }
+/* dark stays matte & ringless — the mat tokens already resolve to a
+   quiet black shadow, so no dark override needed here */
+/* inner log block — concentric with the 24px panel */
+[data-wb-style="flat"] .wb-logtail { border-radius: var(--radius-tool); background: var(--surface-subtle); }
+/* footer hairline goes solid again (dashed was the soft-UI pass) */
+[data-wb-style="flat"] .wb-card-foot { border-top-style: solid; }
+
+/* ============ NO BOXES — pills/badges become bare text ============ */
+/* priority ("P1 · med") */
+[data-wb-style="flat"] .wb-prio { background: transparent; padding: 0; height: auto; border-radius: 0; }
+/* tags ("#frontend") */
+[data-wb-style="flat"] .wb-tags { gap: 4px 10px; }
+[data-wb-style="flat"] .wb-tag { background: transparent; padding: 0; height: auto; border-radius: 0; }
+/* status ("Needs spec", "Running", …) — keep icon + color, drop the chip shell */
+.wb-status { background: transparent; border-color: transparent; padding: 0; height: auto; }
+.wb-status.s-live { background: transparent; border-color: transparent; }
+.wb-status.s-ready, .wb-status.s-warn { border-color: transparent; }
+
+/* drag ghost matches the flat card */
+.wb-drag-ghost { border: 1px solid var(--border-panel); border-radius: var(--radius-card); }
+
+/* ============ LIST VIEW — flat bordered sections (base styles now in core) ============ */
+.wb-board.listview { padding: 4px 30px 24px 32px; }
+
+/* archived note — hairline, no fill */
+.wb-archived-note { background: transparent; margin-left: 32px; margin-right: 30px; }

@@ -1,67 +1,81 @@
 # Eclipse OS
 
-Eclipse OS is a desktop-oriented AI agent harness. The current implementation keeps the approved Eclipse OS shell visual baseline intact while adding the first real harness path: provider selection, local persisted threads, streamed assistant/tool activity, and settings for adapter configuration.
+Eclipse OS is a desktop interface for working with AI agents, local tasks, and development context in one place. This repository combines the intended Eclipse application shell with a small provider-neutral harness and local thread persistence.
 
-![Eclipse OS desktop home](reference/codex/screenshots/portfolio-harness-2026-07-14/final-app-shell-home-1440.png)
+![Eclipse OS home](docs/assets/eclipse-home.png)
 
-The repository is a focused, runnable portfolio extract. It contains the desktop shell, provider contracts, Eclipse persistence layer, tests, and visual evidence without the private planning material from the wider application workspace.
+## What works
 
-## Current Harness Slice
+- The canonical Eclipse desktop shell, including its command palette, environment panel, workspace Files/Browser/Diffs panel, themes, and Settings overlay.
+- Embedded Workboard, Automations, and Plugins views that switch without reloading the shell.
+- A working offline provider whose reasoning, tool activity, and assistant text are rendered through the Eclipse conversation UI.
+- Provider selection and conversation records are written to browser storage when available. Restoring those records into the visible sidebar and transcript is not implemented yet.
+- Provider contracts for the OpenAI Responses API and local authenticated CLI agents.
+- The separate Eclipse mobile companion prototype and its pocket Workboard, Automations, and Plugins pages.
 
-- `apps/desktop-shell` renders the Eclipse OS desktop shell and settings surface.
-- `packages/harness-core` defines provider-neutral message, stream, tool, auth, capability, registry, and adapter contracts.
-- `packages/harness-eclipse` contains Eclipse-specific fixture events plus local thread/settings persistence.
-- The desktop shell persists local threads/messages in browser storage and stores only the selected provider. API keys and CLI secrets are not stored in the browser.
-- The conversation view streams through the adapter registry and renders reasoning/tool events with the existing Eclipse OS transcript styling.
+![Offline harness conversation](docs/assets/eclipse-offline-conversation.png)
 
-## Supported Providers
+## Provider status
 
-| Provider | Status | Notes |
-| --- | --- | --- |
-| Offline Mock | Supported in the desktop shell | Deterministic local adapter for portfolio verification, no credentials required. |
-| OpenAI Responses API | Adapter implemented, secure host required | Uses the official raw API shape behind injected `fetch` and `OPENAI_API_KEY`; the browser shell does not store or request keys. |
-| Local CLI Agent | Contract implemented, secure host runner required | Uses the CLI's own authentication once a host runner is attached; no CLI secrets are stored by Eclipse OS. |
+| Provider | Current state |
+| --- | --- |
+| Offline Mock | Runs entirely in the browser and requires no credentials. |
+| OpenAI Responses API | Request and streaming adapter implemented; a secure host must supply `OPENAI_API_KEY` and perform the request. |
+| Local CLI Agent | Adapter contract implemented; a desktop host runner must attach the authenticated CLI process. |
 
-Unsupported today: ChatGPT consumer subscription sync, private ChatGPT endpoint access, account scraping, and treating ChatGPT subscriptions as OpenAI API credentials.
+The model control in the composer cycles through these providers. Providers that cannot run safely in the browser are marked `Host` and return a clear setup response instead of requesting or storing secrets.
 
-Official API reference used for the raw OpenAI adapter: https://platform.openai.com/docs/api-reference/responses/create
+ChatGPT consumer subscriptions are not OpenAI API credentials. Account scraping, private ChatGPT endpoints, and subscription-chat synchronization are not implemented or claimed here.
 
-## Run Locally
+## Product surfaces
+
+![Eclipse Workboard](docs/assets/eclipse-workboard.png)
+
+Workboard, Automations, and Plugins are interactive local prototypes. Their current seed data and in-page actions demonstrate the intended workflows; they are not yet a durable job scheduler, remote execution service, or plugin sandbox.
+
+The mobile companion is included for continuity, but the desktop shell is the canonical application.
+
+<img src="docs/assets/eclipse-mobile.png" alt="Eclipse OS mobile companion" width="390" />
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `apps/desktop-shell/EclipseOS.html` | Canonical desktop UI with one nonvisual harness module import. |
+| `apps/desktop-shell/public` | Settings, mobile pages, shared design tokens, assets, and embedded product modules. |
+| `apps/desktop-shell/src/harnessBridge.ts` | Connects the existing composer and transcript to providers and local threads. |
+| `packages/harness-core` | Provider registry, normalized stream events, auth boundaries, and adapters. |
+| `packages/harness-eclipse` | Eclipse thread/settings persistence and harness fixture contract. |
+| `tests` | Harness behavior and canonical-UI integrity tests. |
+
+## Run locally
 
 ```bash
 pnpm install
 pnpm run desktop:dev
 ```
 
-Open `http://127.0.0.1:5173/`.
+Open the local URL printed by Vite. The default is `http://127.0.0.1:5173/`.
 
-Useful checks:
+Run the complete verification pass with:
 
 ```bash
 pnpm run verify
 ```
 
-## Visual Evidence
+The UI integrity tests verify that the desktop shell still matches the supplied visual authority except for the harness module tag, that every core surface remains present, and that all referenced local assets ship with the app.
 
-Curated screenshots for this slice live in `reference/codex/screenshots/portfolio-harness-2026-07-14/`.
+## Source authority
 
-![Offline adapter conversation with streamed tool activity](reference/codex/screenshots/portfolio-harness-2026-07-14/final-harness-conversation-1440.png)
+The import provenance and SHA-256 hashes for the supplied application archive are recorded in [`docs/source-authority.json`](docs/source-authority.json). Private uploads, internal briefs, scraps, and historical working screenshots from that archive are deliberately excluded from this public repository.
 
-- `before-desktop-main-1440.png` - canonical static desktop baseline before UI edits.
-- `before-app-shell-1440.png` - runnable app shell baseline before UI edits.
-- `final-app-shell-home-1440.png` - final desktop home state.
-- `final-harness-conversation-1440.png` - real offline-adapter conversation with streamed tool activity.
-- `final-settings-harness-general-1440.png` - settings surface with harness provider/secret-boundary card.
-- `final-app-shell-home-390.png` - narrow viewport QA capture.
+## Next milestones
 
-## Roadmap
-
-- Add a secure host boundary for raw API providers so API keys live in env, OS keychain, or backend storage.
-- Attach local CLI runners for authenticated tools such as Codex/OpenCode/OpenClaw through the common adapter contract.
-- Add local import for user-exported conversation archives as a separate offline feature.
-- Promote richer reasoning/tool components only through the existing component scout, lab import, tokenization, and visual QA flow.
-- Expand persistence beyond browser storage when the desktop host storage boundary is ready.
+- Add a secure desktop host for raw API and authenticated CLI adapters.
+- Replace seeded Workboard, Automations, and Plugins state with persistent stores and real harness actions.
+- Restore persisted conversations into the sidebar and transcript on reload.
+- Bundle the remaining remote development-only font and Tweaks-panel dependencies for a fully offline production build.
 
 ## License
 
-The code in this portfolio extract is available under the [MIT License](LICENSE).
+The code in this repository is available under the [MIT License](LICENSE).

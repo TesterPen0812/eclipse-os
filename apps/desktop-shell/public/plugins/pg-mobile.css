@@ -1,0 +1,121 @@
+/* ============================================================
+   ECLIPSE OS — PLUGINS · MOBILE
+   The desktop Plugins module, pocket-sized. Same shapes:
+   Installed ⇄ Browse seg, kind sections as white ROWS panels
+   (§6 settings shape) resting on the page, ink toggles, status
+   dots (§4 — the only place color speaks), registry cards, and
+   a Dialog-Mat detail sheet. Data comes from PG_CORE
+   (plugins/plugins.js). Shell chrome from mobile-shell.css.
+   ============================================================ */
+
+#pgmApp {
+  --pg-alive: var(--m-alive);
+  --pg-alive-soft: var(--m-alive-soft);
+  --pg-alive-glow: var(--m-alive-glow);
+}
+
+/* ===== scroll column ===== */
+.pgm-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  display: flex; flex-direction: column;
+  padding: 2px 18px calc(env(safe-area-inset-bottom, 0px) + 110px);
+}
+.pgm-scroll::-webkit-scrollbar { display: none; }
+.pgm-scroll[hidden] { display: none; }
+.pgm-scroll .m-search { flex-shrink: 0; }
+.pgm-scroll .m-chips { padding: 10px 0; }
+
+/* ===== kind sections — white ROWS panel on the page ===== */
+.pgm-sections { display: flex; flex-direction: column; gap: 18px; margin-top: 14px; }
+.pgm-board { display: flex; flex-direction: column; gap: 8px; }
+.pgm-board .m-eyebrow { padding: 0 6px; }
+.pgm-panel {
+  background: var(--bg-card); border-radius: var(--radius-card);
+  box-shadow: var(--mat-lift);
+  padding: 7px; display: flex; flex-direction: column; gap: 1px;
+}
+
+/* one plugin row (§6 rows shape: pill hover, no dividers) */
+.pgm-item {
+  display: grid; grid-template-columns: auto 1fr auto; gap: 13px; align-items: center;
+  min-height: 60px; padding: 10px 10px 10px 12px;
+  border: 0; border-radius: 18px; background: transparent; text-align: left;
+  cursor: pointer; font-family: inherit;
+  transition: background 120ms var(--tint), transform 130ms var(--spring-m);
+}
+.pgm-item:active { background: var(--press); transform: scale(0.98); }
+.pgm-item[data-state="off"] .pgm-tile,
+.pgm-item[data-state="off"] .pgm-main { opacity: 0.72; }
+
+/* icon tile — a small well inside the white panel (steps darker) */
+.pgm-tile {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-tool);
+  background: color-mix(in srgb, var(--surface-subtle) 100%, var(--shadow-ink) 4%);
+  color: var(--txt-primary);
+  transition: opacity 150ms var(--tint);
+}
+.pgm-tile svg { width: 18px; height: 18px; }
+
+.pgm-main { min-width: 0; transition: opacity 150ms var(--tint); }
+.pgm-l1 { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.pgm-l1 .nm { font-size: 14.5px; font-weight: var(--weight-medium); letter-spacing: -0.2px; color: var(--txt-bright); line-height: 1.42; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pgm-l1 .vr { font-family: var(--font-code); font-size: 11px; color: var(--txt-section); flex-shrink: 0; }
+.pgm-l2 { display: block; margin-top: 4px; font-size: 12px; color: var(--txt-dim); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pgm-l2 .sep { margin: 0 5px; color: var(--txt-faint); }
+.pgm-l2 .warn { color: var(--txt-strong); }
+.pgm-l2 .live { font-family: var(--font-code); color: var(--pg-alive); }
+.pgm-l2 .live .cursor { animation: m-caret 1.15s steps(2) infinite; }
+
+/* status dot — the ONLY place color speaks (§4) */
+.pgm-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 7px; box-shadow: inset 0 0 0 1.5px var(--txt-faint); vertical-align: 0; }
+.pgm-dot.conn { background: var(--pg-alive); box-shadow: none; }
+.pgm-dot.live { background: var(--pg-alive); box-shadow: 0 0 6px var(--pg-alive-glow); animation: m-breathe 3s ease-in-out infinite; }
+.pgm-dot.on { box-shadow: inset 0 0 0 1.5px var(--txt-section); }
+.pgm-dot.err { background: var(--txt-strong); box-shadow: none; }
+
+/* ===== browse — registry cards ===== */
+.pgm-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.pgm-regcard {
+  display: flex; flex-direction: column; text-align: left;
+  border-radius: var(--radius-card);
+  background: var(--bg-card); box-shadow: var(--mat-lift);
+  border: 0; padding: 17px 17px 14px;
+  font-family: inherit; cursor: pointer;
+  transition: transform 140ms var(--spring-m), background 140ms var(--tint);
+}
+.pgm-regcard:active { transform: scale(0.97); background: color-mix(in srgb, var(--bg-card) 90%, var(--wash-ink)); }
+.pgm-regcard .rc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.pgm-regcard .rc-ic {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--surface-subtle) 100%, var(--shadow-ink) 4%);
+  color: var(--txt-primary);
+}
+.pgm-regcard .rc-ic svg { width: 17px; height: 17px; }
+.pgm-regcard .rc-kind { margin-left: auto; height: 24px; display: inline-flex; align-items: center; padding: 0 11px; border-radius: var(--radius-pill); background: var(--chip-bg); font-size: var(--text-eyebrow); color: var(--txt-mid); }
+.pgm-regcard .rc-name { display: flex; align-items: baseline; gap: 8px; font-size: 14.5px; font-weight: var(--weight-medium); letter-spacing: -0.2px; color: var(--txt-bright); }
+.pgm-regcard .rc-name .vr { font-family: var(--font-code); font-size: 11px; font-weight: 400; color: var(--txt-section); }
+.pgm-regcard .rc-desc { margin-top: 6px; font-size: 12.5px; line-height: 1.5; color: var(--txt-dim); text-wrap: pretty; }
+.pgm-regcard .rc-foot { display: flex; align-items: center; gap: 7px; margin-top: 13px; font-size: 12.5px; color: var(--txt-section); font-variant-numeric: tabular-nums; }
+.pgm-regcard .rc-foot .go { margin-left: auto; display: inline-flex; align-items: center; gap: 7px; color: var(--txt-mid); }
+.pgm-regcard .rc-foot .go svg { width: 13px; height: 13px; }
+.pgm-regcard.installed .rc-foot .go { color: var(--txt-section); }
+
+/* ===== detail sheet extras ===== */
+.pgm-d-titlerow { display: flex; align-items: center; gap: 13px; margin-top: 4px; }
+.pgm-d-tile {
+  width: 44px; height: 44px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--surface-subtle) 100%, var(--shadow-ink) 4%);
+  color: var(--txt-primary);
+}
+.pgm-d-tile svg { width: 20px; height: 20px; }
+.pgm-d-kind { margin-top: 3px; font-size: var(--text-eyebrow); letter-spacing: var(--tracking-eyebrow); text-transform: uppercase; color: var(--txt-section); }
+
+/* permissions — quiet check rows (Law 2: separation by spacing) */
+.pgm-perms { display: flex; flex-direction: column; gap: 2px; }
+.pgm-perm { display: flex; align-items: center; gap: 11px; min-height: 34px; font-size: 13px; color: var(--txt-primary); }
+.pgm-perm svg { width: 13px; height: 13px; color: var(--txt-section); flex-shrink: 0; }

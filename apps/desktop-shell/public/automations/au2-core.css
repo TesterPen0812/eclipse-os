@@ -1,0 +1,227 @@
+/* ============================================================
+   ECLIPSE OS — AUTOMATIONS 2 · core surface
+   Redesigned 2026-07-12 to the plainer scheduled-tasks layout:
+   a calm centered column — big sans title, bordered search
+   field, All/Active/Paused filter tabs, FLAT hover-wash rows
+   (no card backgrounds, no board mat), and a Suggestions
+   section (the old Templates tab, folded in) with quietly
+   tinted icons. All color via tokens — six themes, zero
+   per-theme CSS. Ambient decor (starfield + corner moon)
+   stays opt-in via [data-a2-decor="on"].
+   ============================================================ */
+
+.a2-view {
+  /* module tokens */
+  --a2-alive: var(--live);
+  --a2-alive-soft: color-mix(in srgb, var(--a2-alive) 12%, transparent);
+  --a2-alive-glow: color-mix(in srgb, var(--a2-alive) 50%, transparent);
+  --sp-s: var(--spring-s);
+  --sp-m: var(--spring-m);
+  --sp-l: var(--spring-l);
+  --cm: var(--calm);
+  --tn: var(--tint);
+  --a2-col: 680px;
+  --a2-pad: 30px;
+
+  position: relative;
+  display: flex; flex-direction: column;
+  flex: 1; width: 100%; min-width: 0; min-height: 0;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  color: var(--txt-primary);
+  background: var(--bg-main);
+  background-image: var(--main-bg-image);
+}
+.a2-view svg { display: block; }
+.a2-view .spring { flex: 1 1 auto; }
+
+/* themed scrollbars */
+.a2-view * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.a2-view *::-webkit-scrollbar { width: 9px; height: 9px; }
+.a2-view *::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+.a2-view *::-webkit-scrollbar-track { background: transparent; }
+
+/* ============ AMBIENT DECOR (opt-in) ============ */
+.a2-decor { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; user-select: none; display: none; }
+.a2-view[data-a2-decor="on"] .a2-decor { display: block; }
+.a2-star {
+  position: absolute; font-family: var(--font-ascii); font-size: 11px; line-height: 1;
+  color: var(--txt-primary); opacity: 0.07;
+  animation: a2-twinkle var(--tw, 5s) ease-in-out var(--td, 0s) infinite;
+}
+@keyframes a2-twinkle { 0%, 100% { opacity: 0.06; } 50% { opacity: var(--pk, 0.4); } }
+.a2-bigmoon { position: absolute; top: -150px; right: -180px; width: 620px; height: 620px; opacity: 0.5; }
+[data-appearance="dark"] .a2-bigmoon { opacity: 0.32; }
+
+.a2-topbar, .a2-scroll { position: relative; z-index: 1; }
+
+/* ============ TOP BAR — create only, right-aligned ============ */
+.a2-topbar { flex-shrink: 0; height: 60px; display: flex; align-items: center; }
+.a2-topbar-inner {
+  width: 100%; margin: 0 auto;
+  padding: 0 var(--a2-pad);
+  display: flex; align-items: center; gap: 16px;
+}
+.app.sidebar-collapsed .a2-topbar-inner { padding-left: calc(var(--a2-pad) + 20px); }
+
+.a2-createwrap { margin-left: auto; position: relative; }
+.a2-create {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 34px; padding: 0 15px;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-pill);
+  background: var(--bg-card); color: var(--txt-primary);
+  font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 150ms var(--tn), transform 130ms var(--sp-s);
+}
+.a2-create svg { width: 12px; height: 12px; transition: transform 200ms var(--sp-m); }
+.a2-create:hover { background: var(--hover); }
+.a2-create:active { transform: scale(0.96); }
+.a2-createwrap.open .a2-create svg { transform: rotate(180deg); }
+
+/* ============ FLOATING MENU (create + per-card) ============ */
+.a2-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+  min-width: 224px; display: flex; flex-direction: column; gap: 2px;
+  padding: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-panel);
+  border-radius: var(--radius-field);
+  box-shadow: var(--shadow-panel);
+  opacity: 0; transform: scale(0.97); transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 160ms var(--tn), transform 200ms var(--sp-m);
+}
+.a2-createwrap.open .a2-menu, .a2-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+.a2-menu-it {
+  display: flex; align-items: center; gap: 11px;
+  min-height: 35px; padding: 0 12px;
+  border: 0; border-radius: var(--radius-btn); background: transparent; text-align: left;
+  font-family: var(--font-ui); font-size: 13px; color: var(--txt-primary);
+  cursor: pointer; white-space: nowrap;
+  opacity: 0; transform: translateY(-3px);
+  transition: background 120ms ease, transform 130ms var(--sp-s);
+}
+.a2-createwrap.open .a2-menu-it, .a2-menu.open .a2-menu-it { opacity: 1; transform: none; transition: background 120ms ease, opacity 200ms var(--tn) var(--d, 0ms), transform 260ms var(--sp-m) var(--d, 0ms); }
+.a2-menu-it:hover { background: var(--hover); }
+.a2-menu-it:active { transform: scale(0.98); background: var(--press); }
+.a2-menu-it svg { width: 15px; height: 15px; color: var(--txt-section); flex-shrink: 0; }
+.a2-menu-it.danger, .a2-menu-it.danger svg { color: var(--txt-strong); }
+
+/* ============ SCROLL + COLUMN ============ */
+.a2-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+.a2-col { max-width: var(--a2-col); margin: 0 auto; padding: 8px var(--a2-pad) 120px; display: flex; flex-direction: column; }
+.a2-col[hidden] { display: none; }
+.app.sidebar-collapsed .a2-col { padding-left: calc(var(--a2-pad) + 20px); }
+
+/* hero — big plain sans title (NOT the pixel wordmark; §13 reserves that for ECLIPSE) */
+.a2-hero { margin: 14px 0 24px; }
+.a2-hero h1 { margin: 0; font-family: var(--font-ui); font-size: 27px; font-weight: 600; letter-spacing: -0.5px; color: var(--txt-bright); line-height: 1.15; }
+.a2-hero .a2-sub { margin: 9px 0 0; font-size: 13.5px; color: var(--txt-dim); letter-spacing: 0.1px; text-wrap: pretty; }
+
+/* search — bordered field, focus-halo (per §15 search ruling) */
+.a2-search {
+  display: flex; align-items: center; gap: 11px;
+  height: 44px; padding: 0 15px;
+  background: var(--input-bg); border: 1px solid var(--line-soft); border-radius: var(--radius-field);
+  transition: box-shadow 150ms var(--tn), border-color 150ms var(--tn);
+}
+.a2-search:focus-within { box-shadow: var(--focus-halo); border-color: var(--line-strong); }
+.a2-search svg { width: 15px; height: 15px; color: var(--txt-section); flex-shrink: 0; }
+.a2-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-family: var(--font-ui); font-size: 13.5px; color: var(--txt-primary); }
+.a2-search input::placeholder { color: var(--txt-placeholder); }
+
+/* ============ FILTER TABS — All / Active / Paused ============ */
+.a2-ftabs { display: flex; align-items: center; gap: 4px; margin-top: 20px; }
+.a2-ftab {
+  height: 30px; padding: 0 13px;
+  border: 0; border-radius: var(--radius-pill); background: transparent;
+  font-family: var(--font-ui); font-size: 13px; color: var(--txt-dim);
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 150ms var(--tn), color 150ms var(--tn), transform 130ms var(--sp-s);
+}
+.a2-ftab:hover:not(.on) { color: var(--txt-primary); background: var(--hover); }
+.a2-ftab:active { transform: scale(0.95); }
+.a2-ftab.on { background: var(--active-bg); color: var(--txt-bright); font-weight: 600; }
+
+/* ============ FLAT ROWS ============ */
+.a2-sections { margin-top: 8px; }
+.a2-list { display: flex; flex-direction: column; }
+
+.a2-card {
+  position: relative;
+  display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: start;
+  padding: 14px 8px 13px 10px;
+  border-radius: var(--radius-card);
+  background: transparent;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.a2-card:hover { background: var(--hover); }
+.a2-card.paused { opacity: 0.82; }
+
+/* status ring — achromatic, green only when alive (§4 data-signal) */
+.a2-ring { position: relative; width: 15px; height: 15px; margin-top: 3px; border-radius: 50%; border: 1.5px solid var(--txt-section); transition: border-color 150ms var(--tn); }
+.a2-card[data-state="paused"] .a2-ring { border-style: dashed; }
+.a2-card[data-state="failing"] .a2-ring { border-color: var(--txt-strong); }
+.a2-card[data-state="failing"] .a2-ring::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--txt-strong); }
+.a2-card[data-state="running"] .a2-ring { border-color: var(--a2-alive); box-shadow: 0 0 7px var(--a2-alive-glow); animation: a2-breathe 3s ease-in-out infinite; }
+@keyframes a2-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+.a2-card-main { min-width: 0; }
+.a2-l1 { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.a2-l1 .nm { font-size: 14.5px; font-weight: 500; letter-spacing: -0.2px; color: var(--txt-bright); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a2-l2 { margin-top: 5px; font-size: 12.5px; color: var(--txt-dim); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.a2-l2 .sep { margin: 0 5px; color: var(--txt-faint); }
+.a2-l2 .warn { color: var(--txt-strong); }
+.a2-l2 .live { font-family: var(--font-code); color: var(--a2-alive); }
+.a2-l2 .live .cursor { animation: a2-caret 1.15s steps(2) infinite; }
+@keyframes a2-caret { 50% { opacity: 0.2; } }
+
+/* "…" per-card menu — appears on row hover */
+.a2-cardmenu { position: relative; align-self: center; }
+.a2-dots { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: var(--radius-btn); background: transparent; color: var(--icon-idle); cursor: pointer; opacity: 0; transition: background 120ms ease, color 120ms ease, opacity 130ms ease, transform 130ms var(--sp-s); }
+.a2-card:hover .a2-dots, .a2-card:focus-within .a2-dots, .a2-cardmenu .a2-menu.open + .a2-dots, .a2-dots:focus-visible { opacity: 1; }
+.a2-cardmenu:has(.a2-menu.open) .a2-dots { opacity: 1; }
+.a2-dots:hover { background: var(--press); color: var(--icon-hover); }
+.a2-dots:active { transform: scale(0.90); }
+.a2-dots svg { width: 16px; height: 16px; }
+.a2-cardmenu .a2-menu { top: calc(100% - 2px); }
+
+/* ============ EMPTY STATE — canvas moon + quick starts ============ */
+.a2-empty { display: none; flex-direction: column; align-items: center; text-align: center; padding: 60px 0 24px; }
+.a2-empty.show { display: flex; }
+.a2-moonwrap { position: relative; width: 220px; height: 186px; margin-bottom: 24px; }
+.a2-moonwrap canvas.a2-moon { position: absolute; left: 50%; top: 44%; transform: translate(-50%, -50%); width: 118px; height: 118px; }
+.a2-moonshadow { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); width: 128px; height: 22px; border-radius: 50%; background: radial-gradient(ellipse at center, var(--wash-ink) 0%, transparent 68%); opacity: 0.5; }
+.a2-sparkle { position: absolute; left: 36px; top: 14px; width: 20px; height: 20px; color: var(--txt-mid); animation: a2-twinkle 6s ease-in-out infinite; --pk: 0.9; }
+.a2-sparkle svg { width: 100%; height: 100%; }
+.a2-mstar { position: absolute; font-family: var(--font-ascii); font-size: 11px; line-height: 1; color: var(--txt-primary); opacity: 0.07; animation: a2-twinkle var(--tw, 5s) ease-in-out var(--td, 0s) infinite; }
+.a2-empty .e1 { font-size: 19px; font-weight: 500; color: var(--txt-bright); letter-spacing: -0.3px; }
+.a2-empty .e2 { margin-top: 9px; font-size: 13.5px; color: var(--txt-dim); text-wrap: pretty; max-width: 40ch; }
+.a2-tpls { display: flex; flex-wrap: wrap; justify-content: center; gap: 9px; margin-top: 28px; }
+.a2-tpl {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 38px; padding: 0 16px;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-pill);
+  background: var(--bg-card);
+  font-family: var(--font-ui); font-size: 13px; color: var(--txt-primary);
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 150ms var(--tn), transform 130ms var(--sp-s);
+}
+.a2-tpl svg { width: 15px; height: 15px; color: var(--txt-mid); flex-shrink: 0; }
+.a2-tpl:hover { background: var(--hover); }
+.a2-tpl:active { transform: scale(0.96); }
+
+/* ============ SUGGESTIONS ============
+   Moved to the reusable section: automations/au-suggestions.css
+   (+ au-suggestions.js). Global tokens only, drops into any page. */
+
+/* ============ REDUCED MOTION ============ */
+html[data-motion="reduce"] .a2-view *,
+html[data-motion="reduce"] .a2-detail, html[data-motion="reduce"] .a2-scrim, html[data-motion="reduce"] .a2-dialog { transition: none !important; animation: none !important; }
+html[data-motion="reduce"] .a2-star, html[data-motion="reduce"] .a2-mstar { opacity: 0.14; }
+@media (prefers-reduced-motion: reduce) {
+  .a2-view *, .a2-detail, .a2-scrim, .a2-dialog { transition: none !important; animation: none !important; }
+  .a2-star, .a2-mstar { opacity: 0.14; }
+}

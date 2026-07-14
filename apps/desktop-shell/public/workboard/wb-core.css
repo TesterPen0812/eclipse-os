@@ -1,0 +1,747 @@
+/* ============================================================
+   ECLIPSE OS — WORKBOARD v2  ·  core surface
+   The board as a precision instrument: true-black field, one
+   rounded pane per lane, hairline geometry, brightness-ramp
+   hierarchy, teal reserved for liveness. All color via tokens —
+   themes for all six appearances with zero per-theme rules.
+   ============================================================ */
+
+/* board tokens live on the view AND the body-appended drag ghost.
+   Radii/spacing/type tokens come from styles.css (:root) — no local
+   mirror; the ghost inherits :root custom properties from <html>. */
+.workboard-view, .wb-drag-ghost {
+  /* board tokens — derive from the app's themed semantics */
+  --wb-alive: var(--live);
+  --wb-alive-soft: color-mix(in srgb, var(--wb-alive) 9%, transparent);
+  --wb-alive-line: color-mix(in srgb, var(--wb-alive) 42%, transparent);
+  --wb-alive-line-soft: color-mix(in srgb, var(--wb-alive) 20%, transparent);
+  --wb-alive-glow: color-mix(in srgb, var(--wb-alive) 50%, transparent);
+  --wb-card: var(--bg-card);
+  --wb-line: var(--divider);
+  --wb-line-soft: var(--line-soft);
+  --wb-line-hi: var(--line-strong);
+  --wb-track: var(--track);
+  --wb-warn: var(--txt-primary);
+  --wb-log: var(--tool-body-fg);
+  --wb-ctl-h: 32px;
+  /* legacy locals → ratified curves (audit B2). Press/transform tier =
+     spring-S; card/menu-sized entrances use spring-M at their call sites. */
+  --wb-ease: var(--calm);
+  --wb-spring: var(--spring-s);
+}
+
+.workboard-view {
+  display: flex; flex-direction: column;
+  width: 100%; height: 100%;
+  min-width: 0; min-height: 0; position: relative;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  color: var(--txt-primary);
+  background: var(--bg-main);
+  background-image: var(--main-bg-image);
+}
+
+.workboard-view .spring { flex: 1 1 auto; }
+.workboard-view svg { display: block; }
+
+/* moonlight focus halo — never a colored ring */
+.workboard-view :focus-visible {
+  outline: 1.5px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-btn);
+}
+
+/* themed scrollbars, both axes */
+.workboard-view * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.workboard-view *::-webkit-scrollbar { width: 8px; height: 8px; }
+.workboard-view *::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; }
+.workboard-view *::-webkit-scrollbar-track { background: transparent; }
+
+/* ============ HEADER ============ */
+.wb-header { flex-shrink: 0; display: flex; flex-direction: column; }
+
+.wb-titlebar {
+  display: flex; align-items: center; justify-content: space-between; gap: 20px;
+  padding: 26px 28px 20px 32px;
+}
+.wb-titlebar-left { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.wb-page-h1 {
+  margin: 0; font-size: 24px; font-weight: var(--weight-medium);
+  letter-spacing: -0.5px; color: var(--txt-bright); line-height: 1.1;
+}
+.wb-page-sub { margin: 0; font-size: var(--text-meta); color: var(--txt-dim); letter-spacing: 0.1px; }
+.wb-titlebar-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+
+/* live meta line — quiet instrumentation */
+.wb-meta-line {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--wb-ctl-h); padding: 0 13px; margin-right: 2px;
+  font-size: var(--text-meta); color: var(--txt-mid);
+  background: var(--surface-subtle);
+  border: 1px solid var(--wb-line-soft); border-radius: var(--radius-chip);
+}
+.wb-meta-line .sep { color: var(--txt-section); }
+.wb-meta-line .wb-blk { color: var(--txt-primary); }
+.wb-meta-line .live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--wb-alive);
+  box-shadow: 0 0 6px var(--wb-alive-glow);
+  animation: wb-breathe 3s ease-in-out infinite;
+}
+.wb-meta-line .idle-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--txt-section); }
+@keyframes wb-breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+/* board switcher */
+.wb-switch {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: var(--wb-ctl-h); padding: 0 12px 0 14px;
+  border: 0; border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  cursor: pointer; user-select: none;
+  transition: background 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-switch:hover { background: var(--hover); }
+.wb-switch:active { transform: scale(0.96); background: var(--press); }
+.wb-switch > svg:first-child { width: 15px; height: 15px; color: var(--icon-idle); }
+.wb-switch .chev { width: 12px; height: 12px; color: var(--txt-section); }
+.wb-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.wb-board-name { font-size: var(--text-chip); font-weight: var(--weight-medium); color: var(--txt-primary); letter-spacing: -0.1px; }
+.wb-board-branch { font-size: var(--text-kbd); color: var(--txt-section); }
+
+/* bell */
+.wb-tbtn.icon {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: var(--wb-ctl-h); height: var(--wb-ctl-h);
+  border: 0; border-radius: var(--radius-pill);
+  background: var(--surface-subtle); color: var(--icon-idle); cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-tbtn.icon:hover { background: var(--hover); color: var(--icon-hover); }
+.wb-tbtn.icon:active { transform: scale(0.90); background: var(--press); }
+.wb-tbtn.icon svg { width: 16px; height: 16px; }
+.wb-bell .nd {
+  position: absolute; top: 7px; right: 7px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--txt-strong); opacity: 0; transform: scale(0.5);
+  transition: opacity 150ms ease, transform 150ms var(--wb-spring);
+}
+.wb-bell.has-unread .nd { opacity: 1; transform: scale(1); }
+
+/* ============ COMMAND BAR ============ */
+.wb-commandbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 14px;
+  flex-wrap: wrap;
+  padding: 0 28px 14px 32px;
+  border-bottom: 1px solid var(--wb-line-soft);
+}
+.wb-cmd-left, .wb-cmd-right { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; flex-wrap: nowrap; }
+.wb-cmd-right { margin-left: auto; }
+.wb-cmd-div { width: 1px; height: 18px; background: var(--wb-line-soft); margin: 0 3px; }
+
+/* controls never squash or wrap their labels — the bar wraps instead */
+.wb-filter, .wb-check, .wb-dispatch, .wb-newbtn, .wb-clear, .wb-seg,
+.wb-switch, .wb-meta-line, .wb-icon-btn { white-space: nowrap; flex-shrink: 0; }
+
+/* search */
+.wb-search {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--wb-ctl-h); padding: 0 12px;
+  flex: 0 1 218px; min-width: 132px;
+  background: var(--field-bg); border: 0; border-radius: var(--radius-pill);
+  transition: box-shadow 120ms ease;
+}
+.wb-search:focus-within { box-shadow: var(--focus-halo); }
+.wb-search svg { width: 14px; height: 14px; color: var(--txt-section); flex-shrink: 0; }
+.wb-search input {
+  flex: 1; min-width: 0; border: 0; background: transparent; outline: none;
+  font-family: inherit; font-size: var(--text-meta); color: var(--txt-primary);
+}
+.wb-search input::placeholder { color: var(--txt-placeholder); }
+
+/* filter buttons */
+.wb-filter {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: var(--wb-ctl-h); padding: 0 12px 0 14px; border-radius: var(--radius-pill);
+  background: var(--surface-subtle); border: 0;
+  font-family: inherit; font-size: var(--text-meta); color: var(--txt-dim); cursor: pointer;
+  transition: color 120ms ease, background 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-filter:hover { color: var(--txt-primary); background: var(--hover); }
+.wb-filter:active { transform: scale(0.96); }
+.wb-filter.active-filter { color: var(--txt-primary); background: var(--active-bg); }
+.wb-filter .fchev { width: 11px; height: 11px; color: var(--txt-section); margin-left: -1px; }
+
+/* clear filters */
+.wb-clear {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: var(--wb-ctl-h); padding: 0 12px; border: 0; border-radius: var(--radius-pill);
+  background: transparent; font-family: inherit; font-size: var(--text-meta);
+  color: var(--txt-dim); cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+.wb-clear:hover { color: var(--txt-primary); background: var(--hover); }
+.wb-clear svg { width: 12px; height: 12px; }
+
+/* segmented view toggle */
+.wb-seg {
+  position: relative;
+  display: inline-flex; align-items: center; gap: 2px;
+  height: var(--wb-ctl-h); padding: 3px;
+  background: var(--seg-bg); border: 0; border-radius: var(--radius-pill);
+}
+/* sliding seg-pill (Brief 07): the traveling ink behind the active button */
+.wb-seg-pill {
+  position: absolute; left: 0; top: 3px; width: 0; height: 0;
+  border-radius: var(--radius-pill);
+  background: var(--seg-on);
+  z-index: 0; pointer-events: none;
+  transition: transform var(--dur-m) var(--spring-m), width var(--dur-m) var(--spring-m);
+}
+.wb-seg-btn {
+  position: relative; z-index: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 34px; height: 100%; border: 0; border-radius: var(--radius-pill);
+  background: transparent; color: var(--txt-section); cursor: pointer;
+  transition: color 120ms ease;
+}
+.wb-seg-btn svg { width: 15px; height: 15px; }
+.wb-seg-btn:hover { color: var(--txt-mid); }
+.wb-seg-btn.on { color: var(--txt-primary); }
+
+/* toggles (Archived / Hide empty) */
+.wb-check {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: var(--wb-ctl-h); padding: 0 12px 0 9px; border-radius: var(--radius-pill);
+  font-size: var(--text-meta); color: var(--txt-dim); cursor: pointer; user-select: none;
+  transition: color 120ms ease, background 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-check:hover { background: var(--hover); color: var(--txt-mid); }
+.wb-check:active { transform: scale(0.96); }
+.wb-check .box {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 17px; height: 17px; border-radius: var(--radius-kbd);
+  border: 1px solid var(--wb-line-hi); background: transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.wb-check .box svg { width: 11px; height: 11px; color: transparent; transition: color 120ms ease; }
+.wb-check.on { color: var(--txt-primary); }
+.wb-check.on .box { background: var(--primary-bg); border-color: var(--primary-bg); }
+.wb-check.on .box svg { color: var(--primary-fg); }
+
+/* icon button (refresh) */
+.wb-icon-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--wb-ctl-h); height: var(--wb-ctl-h); border: 0;
+  border-radius: var(--radius-pill); background: var(--surface-subtle);
+  color: var(--icon-idle); cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-icon-btn:hover { background: var(--hover); color: var(--icon-hover); }
+.wb-icon-btn:active { transform: scale(0.90); }
+.wb-icon-btn svg { width: 15px; height: 15px; }
+.wb-icon-btn.spinning svg { animation: wb-spin 0.72s var(--wb-ease); }
+@keyframes wb-spin { to { transform: rotate(360deg); } }
+
+/* dispatcher — the >_ instrument */
+.wb-dispatch {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: var(--wb-ctl-h); padding: 0 6px 0 14px;
+  border: 0; border-radius: var(--radius-pill);
+  background: var(--surface-subtle);
+  font-size: var(--text-meta); color: var(--txt-mid); cursor: pointer; user-select: none;
+  transition: color 120ms ease, background 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-dispatch:hover { color: var(--txt-primary); background: var(--hover); }
+.wb-dispatch:active { transform: scale(0.96); }
+.wb-dispatch .disp-ic { display: none; }
+.wb-dispatch .disp-prompt { font-size: var(--text-kbd); color: var(--txt-faint); letter-spacing: 1px; }
+.wb-dispatch.running .disp-prompt { color: var(--wb-alive); animation: wb-caret 1.15s steps(2) infinite; }
+@keyframes wb-caret { 50% { opacity: 0.25; } }
+.wb-dispatch .auto-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 22px; padding: 0 9px; margin-left: 2px;
+  border-radius: var(--radius-pill); border: 1px solid var(--wb-line-soft);
+  font-size: var(--text-eyebrow); color: var(--txt-dim);
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.wb-dispatch .auto-pill:hover { border-color: var(--wb-line); color: var(--txt-primary); }
+.wb-dispatch .auto-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--txt-section); transition: background 120ms ease, box-shadow 120ms ease; }
+.wb-dispatch.auto .auto-pill { color: var(--wb-alive); border-color: var(--wb-alive-line-soft); background: var(--wb-alive-soft); }
+.wb-dispatch.auto .auto-dot { background: var(--wb-alive); box-shadow: 0 0 5px var(--wb-alive-glow); animation: wb-breathe 3s ease-in-out infinite; }
+
+/* new card — the one primary action */
+.wb-newbtn {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: var(--wb-ctl-h); padding: 0 14px 0 11px;
+  border-radius: var(--radius-pill); background: var(--primary-bg); color: var(--primary-fg);
+  font-size: var(--text-meta); font-weight: var(--weight-medium); cursor: pointer; user-select: none;
+  transition: background 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-newbtn:hover { background: var(--primary-bg-hover); }
+.wb-newbtn:active { transform: scale(0.96); }
+.wb-newbtn svg { width: 13px; height: 13px; }
+
+/* ============ BOARD FIELD ============ */
+.wb-board-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.wb-board {
+  flex: 1; min-height: 0;
+  display: flex; align-items: stretch; gap: 12px;
+  padding: 18px 28px 20px 32px;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-gutter: stable;
+  scroll-padding-left: 32px;
+}
+/* kanban mode: one large rounded board container holding the lanes.
+   List view keeps the flat full-bleed field. */
+.wb-board:not(.listview) {
+  margin: 16px 28px 20px 32px;
+  padding: 16px 18px 18px;
+  background: var(--surface-subtle);
+  border-radius: 28px; /* softened with the flat cards (24px) — container stays rounder than its contents */
+  scroll-padding-left: 18px;
+}
+.wb-board.listview { display: block; overflow-y: auto; overflow-x: hidden; }
+
+/* edge fades removed — the cut-off lane itself signals horizontal scroll */
+.wb-edge-fade { display: none; }
+
+.wb-board-blank {
+  margin: auto; padding: 40px; text-align: center;
+  font-size: var(--text-chip); color: var(--txt-dim);
+}
+
+/* archived note */
+.wb-archived-note {
+  display: flex; align-items: center; gap: 9px;
+  margin: 14px 28px 0 32px; padding: 9px 14px;
+  background: var(--surface-subtle); border: 1px solid var(--wb-line-soft);
+  border-radius: var(--radius-tool);
+  font-size: var(--text-meta); color: var(--txt-mid);
+}
+.wb-archived-note svg { width: 14px; height: 14px; color: var(--txt-dim); }
+.wb-archived-note .an-clear { color: var(--txt-primary); cursor: pointer; border-radius: var(--radius-kbd); }
+.wb-archived-note .an-clear:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* ============ LANES ============ */
+.wb-lane {
+  flex: 0 0 288px; width: 288px; min-height: 0;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+/* the white column panel — a pseudo-element so the floating lane head
+   sits on the board surface and the card-list scroll masks never fade
+   the panel itself, only the cards */
+.wb-lane::before {
+  content: ""; position: absolute; inset: 34px 0 0 0;
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line-soft);
+  border-radius: var(--radius-chip);
+  pointer-events: none;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.wb-board.dense .wb-lane { flex-basis: 244px; width: 244px; }
+
+.wb-lane-head {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 8px;
+  height: 34px; padding: 0 8px 0 6px;
+  position: relative;
+}
+.wb-lane-ic { display: inline-flex; width: 15px; height: 15px; color: var(--txt-faint); }
+.wb-lane-ic svg { width: 15px; height: 15px; }
+.wb-lane-name { font-size: var(--text-chip); color: var(--txt-mid); letter-spacing: 0.1px; }
+.wb-lane-count { font-size: var(--text-kbd); color: var(--txt-section); }
+.wb-lane-count::before { content: "["; }
+.wb-lane-count::after { content: "]"; }
+.wb-lane-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--wb-alive);
+  box-shadow: 0 0 6px var(--wb-alive-glow); margin-right: -1px;
+  animation: wb-breathe 3s ease-in-out infinite;
+}
+.wb-lane[data-lane="progress"] .wb-lane-name { color: var(--txt-primary); }
+.wb-lane-add {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px; margin-left: auto; border-radius: var(--radius-btn);
+  color: var(--txt-section); cursor: pointer; opacity: 0;
+  transition: opacity 140ms ease, background 120ms ease, color 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-lane-add svg { width: 13px; height: 13px; }
+.wb-lane:hover .wb-lane-add, .wb-lane-add:focus-visible { opacity: 1; }
+.wb-lane-add:hover { background: var(--hover); color: var(--txt-primary); }
+.wb-lane-add:active { transform: scale(0.90); }
+.wb-lane-head:has(.wb-lane-add) .wb-lane-count { margin-left: 0; }
+.wb-lane-head .wb-lane-count:last-child { margin-left: auto; padding-right: 7px; }
+
+.wb-lane-cards {
+  flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden;
+  scrollbar-gutter: stable;
+  display: flex; flex-direction: column; gap: 9px;
+  padding: 10px 6px 10px 10px;
+  position: relative; /* paints above the ::before panel */
+}
+/* scroll-fade masks — the DS's one sanctioned gradient */
+.wb-lane-cards.fade-btm { mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent); }
+.wb-lane-cards.fade-top { mask-image: linear-gradient(to bottom, transparent, #000 18px); }
+.wb-lane-cards.fade-top.fade-btm { mask-image: linear-gradient(to bottom, transparent, #000 18px, #000 calc(100% - 18px), transparent); }
+.wb-lane-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+  padding: 34px 12px; margin: auto 0;
+  font-size: var(--text-kbd); color: var(--txt-section); text-align: center;
+}
+.wb-lane-empty .le-glyphs {
+  font-family: var(--font-ascii, var(--font-ui)); font-size: var(--text-chip);
+  color: var(--txt-section); letter-spacing: 2px; user-select: none;
+}
+.wb-lane-empty .le-ic {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; border-radius: var(--radius-row);
+  border: 1px dashed var(--wb-line); color: var(--txt-section);
+}
+.wb-lane-empty .le-ic svg { width: 14px; height: 14px; }
+
+/* ============ CARDS ============ */
+.wb-card {
+  position: relative;
+  background: var(--wb-card);
+  border: 1px solid var(--wb-line-soft);
+  border-radius: var(--radius-tool);
+  padding: 11px 13px 10px;
+  cursor: pointer; user-select: none;
+  display: flex; flex-direction: column; gap: 8px;
+  transition: border-color 140ms ease, background 140ms ease, transform 130ms var(--wb-spring);
+}
+.wb-card:hover { border-color: var(--wb-line-hi); transform: translateY(-1px); }
+.wb-card:active { transform: scale(0.96); background: color-mix(in srgb, var(--wb-card) 88%, var(--wash-ink)); }
+.wb-card.entering { animation: wb-enter 260ms var(--wb-ease); }
+@keyframes wb-enter { from { opacity: 0; transform: translateY(6px); } }
+.wb-card.flash { animation: wb-flash 900ms ease; }
+@keyframes wb-flash { 0% { border-color: var(--wb-line-hi); background: var(--hover); } }
+
+.wb-card-top { display: flex; align-items: center; gap: 8px; min-height: 18px; }
+.wb-id { font-size: var(--text-eyebrow); color: var(--txt-section); letter-spacing: 0.5px; white-space: nowrap; }
+
+/* priority — flat, brightness only */
+.wb-prio { font-size: var(--text-eyebrow); letter-spacing: 0.4px; white-space: nowrap; }
+.wb-prio.p0 { color: var(--txt-strong); }
+.wb-prio.p1 { color: var(--txt-mid); }
+.wb-prio.p2 { color: var(--txt-faint); }
+.wb-prio .prio-w { font-style: normal; color: var(--txt-section); }
+
+/* card flag — one quiet warning glyph */
+.wb-flag { display: inline-flex; color: var(--txt-primary); }
+.wb-flag svg { width: 13px; height: 13px; }
+
+/* status chip — the one bordered tier */
+.wb-status {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 21px; padding: 0 8px; border-radius: var(--radius-btn);
+  font-size: var(--text-eyebrow); letter-spacing: 0.2px; white-space: nowrap;
+  background: var(--chip-bg); border: 1px solid transparent; color: var(--txt-dim);
+}
+.wb-status svg { width: 11px; height: 11px; }
+.wb-status.s-live { color: var(--wb-alive); background: var(--wb-alive-soft); border-color: var(--wb-alive-line-soft); }
+.wb-status.s-live svg { animation: wb-spin-slow 3.4s linear infinite; }
+@keyframes wb-spin-slow { to { transform: rotate(360deg); } }
+.wb-status.s-ready { color: var(--txt-primary); border-color: var(--wb-line); }
+.wb-status.s-review { color: var(--txt-mid); }
+.wb-status.s-warn { color: var(--wb-warn); border-color: var(--wb-line-hi); }
+.wb-status.s-done { color: var(--txt-dim); }
+.wb-status.s-sched, .wb-status.s-muted { color: var(--txt-dim); }
+
+.wb-card-title {
+  font-size: var(--text-row); line-height: 1.5; color: var(--txt-primary);
+  font-weight: var(--weight-medium);
+  letter-spacing: -0.1px; text-wrap: pretty;
+}
+
+/* tags — bare mono text */
+.wb-tags { display: flex; flex-wrap: wrap; gap: 4px 10px; }
+.wb-tag { font-size: var(--text-eyebrow); color: var(--txt-faint); letter-spacing: 0.3px; }
+.wb-tag::before { content: "#"; color: var(--txt-section); margin-right: 1px; }
+
+/* meta chips — quiet inline facts */
+.wb-card-meta { display: flex; flex-wrap: wrap; gap: 5px 12px; }
+.wb-meta-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--text-eyebrow); color: var(--txt-dim); white-space: nowrap;
+}
+.wb-meta-chip svg { width: 12px; height: 12px; color: var(--txt-section); }
+
+/* live-process texture */
+.wb-worktree {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--text-eyebrow); color: var(--txt-dim); letter-spacing: 0.2px;
+}
+.wb-worktree svg { width: 12px; height: 12px; color: var(--txt-section); flex-shrink: 0; }
+.wb-worktree span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.wb-logtail {
+  font-family: var(--font-code); font-size: var(--text-kbd); line-height: 1.55;
+  color: var(--wb-log);
+  padding: 7px 10px;
+  background: var(--tool-head-bg); border: 1px solid var(--wb-line-soft);
+  border-radius: var(--radius-btn);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lt-ts { color: var(--txt-section); }
+.lt-diff { color: var(--txt-primary); }
+.lt-quiet { color: var(--wb-warn); }
+
+/* runtime meter */
+.wb-meter { display: flex; align-items: center; gap: 9px; }
+.wb-bar {
+  flex: 1; height: 3px; border-radius: 2px; background: var(--wb-track); overflow: hidden;
+}
+.wb-bar i { display: block; height: 100%; border-radius: 2px; background: var(--wb-alive); transition: width 400ms var(--wb-ease); }
+.wb-bar i.over { background: var(--wb-warn); }
+.wb-meter .val { font-size: var(--text-eyebrow); color: var(--txt-dim); white-space: nowrap; }
+.wb-meter .val.over { color: var(--wb-warn); }
+
+/* footer */
+.wb-card-foot {
+  display: flex; align-items: center; gap: 7px; min-height: 22px;
+  margin-top: 2px; padding-top: 9px;
+  border-top: 1px solid var(--wb-line-soft);
+}
+.wb-card:not(:has(.wb-card-foot)) { padding-bottom: 12px; }
+.wb-owner-name { font-size: var(--text-kbd); color: var(--txt-mid); }
+.wb-hb { display: inline-flex; align-items: center; gap: 7px; margin-left: auto; }
+.wb-hb-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--wb-alive);
+  box-shadow: 0 0 5px var(--wb-alive-glow);
+  animation: wb-breathe 3s ease-in-out infinite;
+}
+.wb-card.stale .wb-hb-dot { background: var(--txt-section); box-shadow: none; animation: none; }
+.wb-hb-time { font-size: var(--text-eyebrow); color: var(--txt-dim); font-variant-numeric: tabular-nums; }
+.wb-stale-tag { font-size: var(--text-eyebrow); color: var(--wb-warn); letter-spacing: 0.2px; }
+.wb-done-tag {
+  display: inline-flex; align-items: center; gap: 5px; margin-left: auto;
+  font-size: var(--text-eyebrow); color: var(--txt-dim);
+}
+.wb-done-tag svg { width: 11px; height: 11px; }
+.wb-suggest {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: var(--text-eyebrow); color: var(--txt-dim); font-style: normal;
+}
+.wb-suggest svg { width: 12px; height: 12px; color: var(--txt-section); }
+.wb-need { margin-left: auto; font-size: var(--text-eyebrow); color: var(--txt-dim); }
+.wb-unclaimed { font-size: var(--text-eyebrow); color: var(--txt-dim); }
+
+/* claim — clearly an action */
+.wb-claim-btn {
+  display: inline-flex; align-items: center; gap: 6px; margin-left: auto;
+  height: 26px; padding: 0 11px; border: 1px solid var(--wb-line-hi);
+  border-radius: var(--radius-btn); background: var(--ctl-bg);
+  font-family: inherit; font-size: var(--text-kbd); color: var(--txt-primary); cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, transform 130ms var(--wb-spring);
+}
+.wb-claim-btn:hover { background: var(--ctl-bg-hover); }
+.wb-claim-btn:active { transform: scale(0.94); }
+.wb-claim-btn svg { width: 12px; height: 12px; }
+
+/* avatars — desaturated per the DS */
+.wb-avatar {
+  display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+  width: 20px; height: 20px; border-radius: 50%;
+  font-size: 10px; font-weight: var(--weight-medium); color: var(--avatar-ink);
+  filter: grayscale(1);
+}
+.wb-avatar.none { background: var(--chip-bg) !important; color: var(--txt-dim); filter: none; border: 1px dashed var(--wb-line-hi); }
+
+/* card states — meta down-ramps, titles stay legible */
+.wb-card.done-card .wb-card-title { color: var(--txt-mid); }
+.wb-card.done-card .wb-id, .wb-card.done-card .wb-prio { color: var(--txt-section); }
+.wb-card.dim .wb-tags .wb-tag, .wb-card.dim .wb-meta-chip { color: var(--txt-section); }
+
+/* ============ FLAT COLUMN STYLE — tweak: data-wb-style="flat" ============
+   Removes the per-lane white panel. Cards float directly on the gray board
+   with a softer, lifted look. Structure/spacing/interactions unchanged;
+   theme-aware via --shadow-ink + --wb tokens, so it works in every theme. */
+[data-wb-style="flat"] .wb-lane::before { display: none; }
+[data-wb-style="flat"] .wb-lane-cards { padding: 4px 3px 14px; gap: 12px; }
+[data-wb-style="flat"] .wb-card {
+  border-color: transparent;
+  border-radius: 24px;
+  padding: 15px 17px 13px;
+  gap: 9px;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--shadow-ink) 3%, transparent),
+    0 2px 8px color-mix(in srgb, var(--shadow-ink) 4%, transparent);
+  transition: box-shadow 150ms var(--wb-ease), transform 130ms var(--wb-spring);
+}
+[data-wb-style="flat"] .wb-card:hover {
+  border-color: transparent;
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--shadow-ink) 3%, transparent),
+    0 4px 14px color-mix(in srgb, var(--shadow-ink) 5%, transparent);
+  transform: translateY(-2px);
+}
+[data-wb-style="flat"] .wb-card:active { transform: scale(0.97); }
+
+/* flat card interior — soft-UI pass (see reference: big radii, pill
+   repetition, quiet meta, strong title). Scoped to flat so the Panels
+   style keeps its hairline instrument look. */
+[data-wb-style="flat"] .wb-card-title {
+  font-size: var(--text-nav); line-height: 1.42;
+  letter-spacing: -0.2px;
+}
+/* metadata row — smaller, quieter */
+[data-wb-style="flat"] .wb-id { color: var(--txt-section); }
+[data-wb-style="flat"] .wb-card-meta { gap: 5px 11px; }
+[data-wb-style="flat"] .wb-meta-chip { color: var(--txt-faint); }
+/* priority — small rounded badge (shape repetition with tags/status) */
+[data-wb-style="flat"] .wb-prio {
+  display: inline-flex; align-items: center;
+  height: 19px; padding: 0 8px; border-radius: 999px;
+  background: var(--chip-bg);
+}
+/* tags — soft pills instead of bare mono text */
+[data-wb-style="flat"] .wb-tags { gap: 5px 6px; }
+[data-wb-style="flat"] .wb-tag {
+  display: inline-flex; align-items: center;
+  height: 21px; padding: 0 10px; border-radius: 999px;
+  background: var(--chip-bg); color: var(--txt-dim);
+}
+/* status chip joins the pill family */
+[data-wb-style="flat"] .wb-status { border-radius: 999px; }
+/* inner blocks follow the outer curve */
+[data-wb-style="flat"] .wb-logtail { border-radius: 14px; border-color: transparent; background: var(--surface-subtle); padding: 8px 12px; }
+/* footer — dotted hairline, like the reference's ledger rule */
+[data-wb-style="flat"] .wb-card-foot { border-top-style: dashed; padding-top: 10px; }
+/* dark appearance (04B "Umbra" — matte & ringless): no lit edge, no ring.
+   Cards separate tonally from the void; lift is a quiet black shadow only. */
+[data-appearance="dark"][data-wb-style="flat"] .wb-card {
+  box-shadow: 0 4px 12px -4px rgba(0,0,0,0.5);
+}
+[data-appearance="dark"][data-wb-style="flat"] .wb-logtail { background: var(--tool-head-bg); }
+[data-appearance="dark"][data-wb-style="flat"] .wb-card:hover {
+  box-shadow: 0 10px 26px -6px rgba(0,0,0,0.6);
+}
+
+/* ============ DENSE VIEW ============ */
+.wb-board.dense .wb-card { padding: 9px 11px 8px; gap: 6px; }
+.wb-board.dense .wb-tags, .wb-board.dense .wb-card-meta,
+.wb-board.dense .wb-logtail, .wb-board.dense .wb-worktree { display: none; }
+.wb-board.dense .wb-card-title { font-size: var(--text-chip); line-height: 1.45; }
+.wb-board.dense .wb-card-foot { padding-top: 7px; }
+
+/* ============ DRAG & DROP ============ */
+.wb-card.wb-dragging {
+  opacity: 0.35; border-style: dashed; border-color: var(--wb-line-hi);
+  background: transparent;
+}
+.wb-card.wb-dragging > * { visibility: hidden; }
+.wb-drag-ghost-wrap {
+  position: fixed; left: 0; top: 0; z-index: 999;
+  pointer-events: none; will-change: transform;
+}
+.wb-drag-ghost {
+  margin: 0;
+  background: var(--bg-panel); border-color: var(--border-panel);
+  box-shadow: var(--shadow-panel);
+}
+body.wb-drag-active { user-select: none; -webkit-user-select: none; }
+body.wb-drag-active, body.wb-drag-active .wb-card { cursor: grabbing; }
+.wb-drop-marker {
+  height: 2px; margin: -1px 4px; border-radius: 1px; flex-shrink: 0;
+  background: color-mix(in srgb, var(--txt-primary) 70%, transparent);
+}
+.wb-lane.drop-target::before { border-color: var(--wb-line-hi); background: var(--hover); }
+
+/* ============ LIST VIEW — lane sections: header band + flat rows ============ */
+.wb-list-sec {
+  max-width: 1060px; margin: 0 auto 14px;
+  border: 1px solid var(--wb-line-soft); border-radius: var(--radius-tool);
+  background: var(--bg-card); overflow: hidden;
+}
+.wb-list-head {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 9px 12px 9px 14px;
+  border: 0; background: var(--surface-subtle); text-align: left;
+  font-family: inherit; color: inherit; cursor: pointer; user-select: none;
+}
+.wb-list-sec[data-lane="blocked"] .wb-list-head { background: color-mix(in srgb, var(--wb-warn) 7%, var(--surface-subtle)); }
+.wb-lane-chev { display: flex; margin-left: auto; color: var(--txt-section); }
+.wb-lane-chev svg { width: 14px; height: 14px; transition: transform 200ms var(--spring-m); }
+.wb-list-sec.collapsed .wb-lane-chev svg { transform: rotate(-90deg); }
+.wb-list-sec.collapsed .wb-list-rows { display: none; }
+.wb-list-rows { border-top: 1px solid var(--wb-line-soft); }
+.wb-list-rows .wb-lane-empty { padding: 26px 12px; }
+.wb-list-row {
+  display: grid; grid-template-columns: 150px 62px 74px minmax(0, 1fr) auto minmax(118px, auto) 30px;
+  align-items: center; gap: 13px;
+  min-height: 46px; padding: 0 8px 0 14px;
+  cursor: pointer;
+  border-top: 1px solid var(--wb-line-soft);
+  transition: background 120ms ease;
+}
+.wb-list-row:first-child { border-top: 0; }
+.wb-list-row:hover { background: var(--hover); }
+.wb-list-row:active { background: var(--press); }
+.wb-list-row.sel { background: var(--active-bg); box-shadow: inset 2px 0 0 var(--txt-primary); }
+
+/* status cell — ONE anatomy for every state: icon in a small tile + plain
+   label. No pill shells (warn is achromatic ink here, so filled pills read
+   as gray buttons). Color carries the signal: live green, warn strong ink. */
+.lr-status {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: var(--text-eyebrow); color: var(--txt-dim); white-space: nowrap;
+}
+.lr-status svg {
+  width: 22px; height: 22px; padding: 4.5px; box-sizing: border-box;
+  border-radius: 6px; background: var(--surface-subtle); color: var(--txt-mid);
+  flex-shrink: 0;
+}
+.lr-status.s-live { color: var(--wb-alive); }
+.lr-status.s-live svg { color: var(--wb-alive); background: var(--wb-alive-soft); animation: wb-spin-slow 3.4s linear infinite; }
+.lr-status.s-done svg { color: var(--wb-alive); background: var(--wb-alive-soft); }
+.lr-status.s-warn { color: var(--wb-warn); font-weight: 600; }
+.lr-status.s-warn svg { color: var(--wb-warn); }
+.lr-status.s-sched, .lr-status.s-ready { color: var(--txt-primary); }
+
+.lr-id { font-size: var(--text-eyebrow); color: var(--txt-section); letter-spacing: 0.4px; white-space: nowrap; }
+.lr-prio { white-space: nowrap; }
+.lr-failic { width: 12px; height: 12px; color: var(--txt-primary); align-self: center; flex-shrink: 0; margin-right: 7px; }
+.lr-name {
+  font-size: var(--text-row); color: var(--txt-primary);
+  display: flex; align-items: center; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;
+}
+.lr-name .lr-failic { display: inline-block; vertical-align: -1px; }
+
+/* tags — bare text, same as the cards (boxes retired shell-wide) */
+.lr-labels { display: flex; gap: 12px; overflow: hidden; justify-content: flex-end; }
+.lr-labels .wb-tag { background: transparent; padding: 0; height: auto; border-radius: 0; }
+
+/* assignee — bare avatar + name for every state (no pill shell) */
+.lr-assignee { display: flex; justify-content: flex-end; }
+
+/* row menu — hover-revealed, same affordance as Automations rows */
+.lr-dots {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  border: 0; border-radius: var(--radius-btn); background: transparent;
+  color: var(--icon-idle); cursor: pointer; opacity: 0;
+  transition: background 120ms ease, color 120ms ease, opacity 130ms ease;
+}
+.lr-dots svg { width: 15px; height: 15px; }
+.wb-list-row:hover .lr-dots, .wb-list-row:focus-within .lr-dots, .lr-dots:focus-visible { opacity: 1; }
+.lr-dots:hover { background: var(--press); color: var(--icon-hover); }
+
+/* assignee cell */
+.wb-assignee { display: inline-flex; align-items: center; gap: 7px; min-width: 0; }
+.wb-assignee .as-name { font-size: var(--text-kbd); color: var(--txt-mid); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wb-assignee.unclaimed .as-name { color: var(--txt-section); }
+.wb-assignee .as-flag { font-size: var(--text-eyebrow); color: var(--wb-warn); }
+
+/* ============ REDUCED MOTION ============ */
+@media (prefers-reduced-motion: reduce) {
+  .workboard-view *, .workboard-view *::before, .workboard-view *::after {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+:root[data-motion="reduce"] .workboard-view *,
+:root[data-motion="reduce"] .workboard-view *::before,
+:root[data-motion="reduce"] .workboard-view *::after {
+  animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}

@@ -1,0 +1,22 @@
+/* ============================================================
+   ECLIPSE OS — AUTOMATIONS · host integration
+   Loaded ONLY by the app shell (EclipseOS.html). Scoped under .main
+   so it is inert anywhere else. Handles the home ⇄ automations view
+   switch — mirror of workboard/wb-host.css. The view itself is the
+   Automations 2 module (#a2Root, .a2-view) since 2026-07-09; the
+   v1 module is archived in scraps/automations-v1/.
+   ============================================================ */
+.main .automations-view { display: none; }
+.main.show-automations { min-width: 0; overflow: hidden; }
+.main.show-automations > .main-toolbar,
+.main.show-automations > .center,
+.main.show-automations > .env-panel,
+.main.show-automations > .work-panel,
+.main.show-automations > .work-resizer { display: none !important; }
+/* a chat's open side panel must not squeeze the automations view */
+.main.show-automations { padding-right: 0 !important; }
+.main.show-automations .automations-view {
+  display: flex; flex-direction: column; flex: 1;
+  width: auto; height: auto;
+  min-width: 0; min-height: 0; position: relative;
+}

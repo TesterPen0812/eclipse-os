@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Eclipse OS — Plugins · mobile</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/favicon-180.png">
+
+<!-- Shared theme bootstrap — stamps data-theme / data-appearance / data-motion
+     on <html> before paint. Same file as every other surface. -->
+<script src="theme-boot.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fragment+Mono&display=swap" rel="stylesheet">
+<!-- styles.css = flat design-system entry point (canonical tokens). -->
+<link rel="stylesheet" href="styles.css">
+<!-- shared pocket chrome: device frame, seg pill, sheets-as-Dialog-Mats, toast -->
+<link rel="stylesheet" href="mobile-shell.css">
+<link rel="stylesheet" href="plugins/pg-mobile.css">
+</head>
+<body>
+
+<div class="app" id="pgmApp" data-screen-label="Plugins — mobile">
+
+  <!-- status bar (hardware mockup chrome) -->
+  <div class="statusbar">
+    <div class="island"></div>
+    <div class="sb-l"><span class="time">9:41</span></div>
+    <div class="sb-r">
+      <svg width="18" height="12" viewBox="0 0 18 12"><rect x="0" y="7.5" width="3" height="4.5" rx="0.7"></rect><rect x="4.5" y="5" width="3" height="7" rx="0.7"></rect><rect x="9" y="2.5" width="3" height="9.5" rx="0.7"></rect><rect x="13.5" y="0" width="3" height="12" rx="0.7"></rect></svg>
+      <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 3.2C10.8 3.2 12.9 4.1 14.4 5.6L15.5 4.5C13.7 2.7 11.2 1.5 8.5 1.5C5.8 1.5 3.3 2.7 1.5 4.5L2.6 5.6C4.1 4.1 6.2 3.2 8.5 3.2Z"></path><path d="M8.5 6.8C9.9 6.8 11.1 7.3 12 8.2L13.1 7.1C11.8 5.9 10.2 5.1 8.5 5.1C6.8 5.1 5.2 5.9 3.9 7.1L5 8.2C5.9 7.3 7.1 6.8 8.5 6.8Z"></path><circle cx="8.5" cy="10.5" r="1.5"></circle></svg>
+      <svg width="27" height="13" viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" stroke="currentColor" stroke-opacity="0.4" fill="none"></rect><rect x="2" y="2" width="18" height="9" rx="2"></rect><path d="M25 4.5V8.5C25.8 8.2 26.5 7.2 26.5 6.5C26.5 5.8 25.8 4.8 25 4.5Z" fill-opacity="0.4"></path></svg>
+    </div>
+  </div>
+
+  <!-- header -->
+  <header class="m-top">
+    <a class="m-back" href="EclipseOSMobile.html" aria-label="Back to shared-brain">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4.6 4.4 8.8l5.1 4.2"/><path d="M4.4 8.8h9.1a6.1 6.1 0 0 1 0 12.2H8.4"/></svg>
+    </a>
+    <div class="m-top-main">
+      <h1 class="m-h1">Plugins</h1>
+      <div class="m-sub" id="pgmSub"></div>
+    </div>
+  </header>
+
+  <!-- Installed ⇄ Browse seg -->
+  <div class="m-segrow">
+    <div class="m-seg" id="pgmSeg" role="tablist" aria-label="Plugins tabs">
+      <span class="m-seg-thumb" aria-hidden="true"></span>
+      <button class="m-seg-tab on" data-tab="installed">Installed</button>
+      <button class="m-seg-tab" data-tab="browse">Browse</button>
+    </div>
+  </div>
+
+  <!-- INSTALLED -->
+  <main class="pgm-scroll" id="pgmInstalled">
+    <label class="m-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11.2" cy="11.2" r="7"/><path d="m16.4 16.4 4.2 4.2"/></svg>
+      <input id="pgmSearch" type="text" placeholder="Search installed plugins" autocomplete="off" spellcheck="false">
+    </label>
+    <div class="pgm-sections" id="pgmSections"></div>
+  </main>
+
+  <!-- BROWSE -->
+  <main class="pgm-scroll" id="pgmBrowse" hidden>
+    <label class="m-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11.2" cy="11.2" r="7"/><path d="m16.4 16.4 4.2 4.2"/></svg>
+      <input id="pgmRegSearch" type="text" placeholder="Search the registry" autocomplete="off" spellcheck="false">
+    </label>
+    <nav class="m-chips" id="pgmFilters" aria-label="Registry filters"></nav>
+    <div class="pgm-grid" id="pgmGrid"></div>
+  </main>
+
+  <!-- add plugin -->
+  <button class="m-fab" id="pgmFab" aria-label="Add plugin"></button>
+
+  <!-- sheets -->
+  <div class="m-scrim" id="pgmScrim"></div>
+  <section class="m-sheet" id="pgmSheet" role="dialog" aria-modal="true" data-screen-label="Plugin sheet"></section>
+
+  <div class="m-toast" id="pgmToast" role="status"></div>
+</div>
+
+<!-- desktop plugins module — loaded for PG_CORE (catalog + state model);
+     it bails before any desktop wiring because #pgRoot is absent. -->
+<script src="plugins/plugins.js"></script>
+<script src="mobile-shell.js"></script>
+<script src="plugins/pg-mobile.js"></script>
+
+</body>
+</html>

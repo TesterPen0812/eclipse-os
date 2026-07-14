@@ -1,0 +1,182 @@
+/* ============================================================
+   ECLIPSE OS — AUTOMATIONS · MOBILE (v2 — Automations 2, pocket-sized)
+   Mirrors the desktop Automations 2 module: Tasks ⇄ Templates
+   seg, search well, Current / Paused sections of flat Mat
+   cards with live run lines, template cards, and Dialog-Mat
+   sheets for detail + create/edit. Schedule math + seed data
+   come from automations/au-cron.js (shared with desktop).
+   Shell chrome comes from mobile-shell.css.
+   ============================================================ */
+
+#aumApp {
+  --au-alive: var(--m-alive);
+  --au-alive-soft: var(--m-alive-soft);
+  --au-alive-glow: var(--m-alive-glow);
+}
+
+/* ===== scroll column ===== */
+.aum-scroll {
+  flex: 1; min-height: 0; overflow-y: auto; scrollbar-width: none;
+  display: flex; flex-direction: column; gap: 0;
+  padding: 2px 18px calc(env(safe-area-inset-bottom, 0px) + 110px);
+}
+.aum-scroll::-webkit-scrollbar { display: none; }
+.aum-scroll[hidden] { display: none; }
+.aum-scroll .m-search { margin: 0 0 6px; flex-shrink: 0; }
+.aum-scroll .m-chips { padding: 6px 0 10px; }
+
+/* ===== sections ===== */
+.aum-sections { display: flex; flex-direction: column; gap: 20px; margin-top: 10px; }
+.aum-sec { display: flex; flex-direction: column; gap: 8px; }
+.aum-sec .m-eyebrow { padding: 0 4px; }
+.aum-cards { display: flex; flex-direction: column; gap: 10px; }
+
+/* ===== task card — flat Mat card (§2), desktop a2-card anatomy ===== */
+.aum-card {
+  position: relative;
+  background: var(--bg-card); border-radius: var(--radius-card);
+  box-shadow: var(--mat-lift);
+  padding: 15px 17px 14px;
+  display: flex; flex-direction: column; gap: 7px; text-align: left;
+  border: 0; cursor: pointer; font-family: inherit;
+  transition: transform 140ms var(--spring-m), background 140ms var(--tint);
+}
+.aum-card:active { transform: scale(0.97); background: color-mix(in srgb, var(--bg-card) 90%, var(--wash-ink)); }
+.aum-card .a-l1 { display: flex; align-items: baseline; gap: 9px; min-width: 0; }
+.aum-card .nm {
+  font-size: 15px; font-weight: var(--weight-medium); letter-spacing: -0.2px; line-height: 1.42;
+  color: var(--txt-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.aum-card .d1 { font-size: 11.5px; color: var(--txt-section); flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 45%; }
+.aum-card .a-l2 {
+  font-size: 12.5px; color: var(--txt-dim); font-variant-numeric: tabular-nums;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.aum-card .a-l2 b { font-weight: var(--weight-normal); color: var(--txt-primary); }
+.aum-card .a-l2 .sep { margin: 0 5px; color: var(--txt-faint); }
+.aum-card .a-l2 .warn { color: var(--txt-strong); }
+.aum-card .a-l2 .live { font-family: var(--font-code); font-size: 12px; color: var(--au-alive); }
+.aum-card .a-l2 .live .cursor { animation: m-caret 1.15s steps(2) infinite; }
+.aum-card.paused .nm { color: var(--txt-mid); }
+.aum-card.paused .a-l2 { color: var(--txt-faint); }
+
+/* run tape — last 8 outcomes, quiet ticks */
+.aum-tape { display: inline-flex; align-items: flex-end; gap: 3px; height: 12px; margin-left: auto; flex-shrink: 0; }
+.aum-tape .tk { width: 4px; height: 8px; border-radius: 1.5px; background: var(--prog-done); opacity: 0.55; }
+.aum-tape .tk.fail { background: var(--txt-strong); opacity: 1; height: 12px; }
+.aum-tape .tk.ghost { background: transparent; box-shadow: inset 0 0 0 1px var(--line-strong); opacity: 1; }
+.aum-card.paused .aum-tape .tk { opacity: 0.28; }
+
+/* ===== templates ===== */
+.aum-tpl-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+.aum-tplcard {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  background: var(--bg-card); border-radius: var(--radius-card); box-shadow: var(--mat-lift);
+  border: 0; padding: 16px 17px 14px; cursor: pointer; font-family: inherit;
+  transition: transform 140ms var(--spring-m), background 140ms var(--tint);
+}
+.aum-tplcard:active { transform: scale(0.97); background: color-mix(in srgb, var(--bg-card) 90%, var(--wash-ink)); }
+.aum-tplcard .tc-top { display: flex; align-items: center; gap: 11px; width: 100%; margin-bottom: 7px; }
+.aum-tplcard .tc-ic {
+  display: flex; align-items: center; justify-content: center;
+  width: 38px; height: 38px; border-radius: var(--radius-field);
+  background: color-mix(in srgb, var(--surface-subtle) 100%, var(--shadow-ink) 4%);
+  color: var(--txt-primary);
+}
+.aum-tplcard .tc-ic svg { width: 17px; height: 17px; }
+.aum-tplcard .tc-name { font-size: 14px; font-weight: var(--weight-medium); letter-spacing: -0.2px; color: var(--txt-bright); }
+.aum-tplcard .tc-desc { font-size: 12.5px; line-height: 1.5; color: var(--txt-dim); text-wrap: pretty; }
+.aum-tplcard .tc-foot {
+  display: inline-flex; align-items: center; gap: 7px; margin-top: 9px;
+  font-size: 12.5px; color: var(--txt-mid);
+}
+.aum-tplcard .tc-foot svg { width: 13px; height: 13px; }
+.aum-browse {
+  margin-top: 14px; align-self: center;
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 16px; border: 0; border-radius: var(--radius-pill);
+  background: transparent; color: var(--txt-dim); font-size: 13px; cursor: pointer;
+  transition: color 150ms var(--tint), background 150ms var(--tint), transform 130ms var(--spring-s);
+}
+.aum-browse:active { background: var(--press); transform: scale(0.96); }
+.aum-browse svg { width: 13px; height: 13px; }
+
+/* ===== empty state — the quiet moon ===== */
+.aum-empty { display: none; }
+.aum-empty.show { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 44px 26px 20px; text-align: center; }
+.aum-moonwrap { position: relative; width: 216px; height: 130px; margin-bottom: 14px; }
+.aum-moon { position: absolute; left: 50%; top: 0; transform: translateX(-50%); width: 118px; height: 118px; }
+.aum-mstar { position: absolute; font-family: var(--font-ascii); font-size: 12px; color: var(--txt-primary); opacity: var(--pk, 0.4); animation: aum-twinkle var(--tw, 5s) ease-in-out var(--td, 0s) infinite; }
+@keyframes aum-twinkle { 0%, 100% { opacity: var(--pk, 0.4); } 50% { opacity: 0.08; } }
+.aum-empty .e1 { font-size: 16px; font-weight: var(--weight-medium); letter-spacing: -0.2px; color: var(--txt-bright); }
+.aum-empty .e2 { font-size: 13px; line-height: 1.6; color: var(--txt-dim); max-width: 300px; text-wrap: pretty; }
+.aum-tpls { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+.aum-tpl {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 15px; border: 0; border-radius: var(--radius-pill);
+  background: var(--chip-bg); color: var(--txt-primary); font-size: 12.5px; cursor: pointer;
+  transition: background 150ms var(--tint), transform 130ms var(--spring-s);
+}
+.aum-tpl:active { background: var(--press); transform: scale(0.95); }
+.aum-tpl svg { width: 14px; height: 14px; color: var(--txt-section); }
+
+/* ===== detail sheet — schedule instrument ===== */
+.aum-sched { display: flex; flex-direction: column; }
+.aum-sched .a-expr {
+  padding: 13px 15px 11px;
+  font-family: var(--font-code); font-size: 16px; letter-spacing: 2px;
+  color: var(--txt-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.aum-fields { display: flex; gap: 4px; padding: 0 13px 11px; }
+.aum-fcell {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 7px 4px; border-radius: 9px;
+  background: color-mix(in srgb, var(--wash-ink) 3%, transparent);
+}
+.aum-fcell .fv { font-family: var(--font-code); font-size: 12.5px; color: var(--txt-primary); }
+.aum-fcell .fl { font-size: 9.5px; letter-spacing: 0.8px; text-transform: uppercase; color: var(--txt-section); }
+.aum-sched .a-human {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 15px; border-top: 1px solid var(--line-soft);
+  font-size: 12.5px; color: var(--txt-mid);
+}
+.aum-sched .a-human svg { width: 14px; height: 14px; color: var(--txt-section); flex-shrink: 0; }
+.aum-sched .a-human .tz { margin-left: auto; color: var(--txt-section); font-size: 10.5px; }
+
+/* next fires */
+.aum-fires { display: flex; flex-direction: column; }
+.aum-nf { display: flex; align-items: center; gap: 10px; min-height: 34px; font-size: 13px; font-variant-numeric: tabular-nums; }
+.aum-nf .nf-tick { width: 2px; height: 11px; border-radius: 1px; background: var(--txt-faint); flex-shrink: 0; }
+.aum-nf:first-child .nf-tick { background: var(--txt-strong); }
+.aum-nf .nf-abs { color: var(--txt-primary); }
+.aum-nf .nf-rel { margin-left: auto; color: var(--txt-section); }
+.aum-nf.none { color: var(--txt-faint); }
+
+/* history attempts — soft rows, expandable logs */
+.aum-atts { display: flex; flex-direction: column; gap: 6px; }
+.aum-att { border-radius: var(--radius-field); background: color-mix(in srgb, var(--surface-subtle) 100%, var(--shadow-ink) 4%); overflow: hidden; }
+.aum-att-head {
+  display: flex; align-items: center; gap: 11px; min-height: 48px;
+  padding: 6px 13px; cursor: pointer;
+  transition: background 120ms var(--tint);
+}
+.aum-att-head:active { background: var(--press); }
+.aum-att-head > svg { width: 15px; height: 15px; flex-shrink: 0; color: var(--txt-dim); }
+.aum-att.failed .aum-att-head > svg { color: var(--txt-strong); }
+.aum-att.running .aum-att-head > svg { color: var(--au-alive); animation: aum-spin 3.4s linear infinite; }
+@keyframes aum-spin { to { transform: rotate(360deg); } }
+.aum-att .at-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.aum-att .at-name { font-size: 13.5px; color: var(--txt-primary); }
+.aum-att .at-name .live { color: var(--au-alive); }
+.aum-att .at-sub { font-size: 12px; color: var(--txt-dim); font-variant-numeric: tabular-nums; }
+.aum-att .at-chev { width: 13px; height: 13px; color: var(--txt-section); flex-shrink: 0; transition: transform 200ms var(--calm); }
+.aum-att.expanded .at-chev { transform: rotate(180deg); }
+.aum-att-log {
+  display: none; margin: 0 8px 8px;
+  background: var(--bg-tool); border-radius: 9px;
+  padding: 10px 12px; font-family: var(--font-code); font-size: 12px; line-height: 1.7;
+  color: var(--tool-body-fg); white-space: pre-wrap; word-break: break-word;
+}
+.aum-att.expanded .aum-att-log, .aum-att.running .aum-att-log { display: block; }
+.aum-att-log .cursor { color: var(--au-alive); animation: m-caret 1.15s steps(2) infinite; }
+.aum-hist-empty { font-size: 12.5px; color: var(--txt-faint); }

@@ -1,0 +1,15 @@
+{
+  "sourceArchive": "g (3).zip",
+  "sourceArchiveSha256": "a2add3c0bb815b2a8831d96a44faca20ff9c8eb911ec8c4ec187a5903491f05f",
+  "canonicalEntry": "EclipseOS.html",
+  "canonicalEntrySha256": "678873df3dbdc0fc9795780a8a69c8785545e4f209777579377d83b951a075db",
+  "settingsEntrySha256": "f7b195b7a8e9924696f06b8723973470b5361e9d5ff7a54669e7c26e7ab2133d",
+  "importedOn": "2026-07-14",
+  "integrationDelta": "The runnable EclipseOS.html adds one nonvisual Vite module tag for src/harnessBridge.ts.",
+  "excludedFromPublication": [
+    "uploads",
+    "briefs",
+    "scraps",
+    "historical screenshots"
+  ]
+}

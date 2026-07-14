@@ -1,0 +1,19 @@
+/* ============================================================
+   ECLIPSE OS — WORKBOARD · host integration
+   Loaded ONLY by the app shell (EclipseOS.html). Scoped under .main
+   so it is inert anywhere else. Handles the home ⇄ workboard view switch.
+   ============================================================ */
+.main .workboard-view { display: none; }
+.main.show-workboard { min-width: 0; overflow: hidden; }
+.main.show-workboard > .main-toolbar,
+.main.show-workboard > .center,
+.main.show-workboard > .env-panel,
+.main.show-workboard > .work-panel,
+.main.show-workboard > .work-resizer { display: none !important; }
+/* a chat's open side panel must not squeeze the board */
+.main.show-workboard { padding-right: 0 !important; }
+.main.show-workboard .workboard-view {
+  display: flex; flex-direction: column; flex: 1;
+  width: auto; height: auto;
+  min-width: 0; min-height: 0; position: relative;
+}

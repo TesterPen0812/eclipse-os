@@ -1,0 +1,280 @@
+/* ============================================================
+   ECLIPSE OS — PLUGINS · core surface
+   Redesigned 2026-07-12 to the plainer marketplace layout
+   (same move as Automations 2): a calm centered column — big
+   sans title, bordered search, an INSTALLED strip of icon
+   tiles, All/Connectors/Skills/Tools filter pills, then flat
+   hover-wash ROWS in a two-column grid (Featured with "…"
+   menus, registry sections with Install buttons and a
+   "See … more" expander). No board mats, no tab seg.
+   All color via tokens — six themes, zero per-theme CSS.
+   Icon tints: muted oklch per plugin via --pg-h (§4-adjacent:
+   quiet hues on marks only, status still ink + live green).
+   ============================================================ */
+
+.pg-view {
+  /* module tokens */
+  --pg-alive: var(--live);
+  --pg-alive-soft: color-mix(in srgb, var(--pg-alive) 12%, transparent);
+  --pg-alive-glow: color-mix(in srgb, var(--pg-alive) 50%, transparent);
+  --sp-s: var(--spring-s);
+  --sp-m: var(--spring-m);
+  --sp-l: var(--spring-l);
+  --cm: var(--calm);
+  --tn: var(--tint);
+  --pg-col: 760px;
+  --pg-pad: 30px;
+
+  position: relative;
+  display: flex; flex-direction: column;
+  flex: 1; width: 100%; min-width: 0; min-height: 0;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  color: var(--txt-primary);
+  background: var(--bg-main);
+  background-image: var(--main-bg-image);
+}
+.pg-view svg { display: block; }
+.pg-view .spring { flex: 1 1 auto; }
+
+/* themed scrollbars */
+.pg-view * { scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+.pg-view *::-webkit-scrollbar { width: 9px; height: 9px; }
+.pg-view *::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; border: 2px solid transparent; background-clip: padding-box; }
+.pg-view *::-webkit-scrollbar-track { background: transparent; }
+
+/* per-plugin icon tint — resolved AT the tinted element so each
+   inline --pg-h takes effect (custom props inherit resolved values) */
+.pg-tile, .pg-chip-tile, .pg-more-ics .mi { color: oklch(0.55 0.11 var(--pg-h, 250)); }
+[data-appearance="dark"] .pg-tile,
+[data-appearance="dark"] .pg-chip-tile,
+[data-appearance="dark"] .pg-more-ics .mi { color: oklch(0.74 0.09 var(--pg-h, 250)); }
+
+/* ============ TOP BAR — add only, right-aligned ============ */
+.pg-topbar { flex-shrink: 0; height: 60px; display: flex; align-items: center; position: relative; z-index: 2; }
+.pg-topbar-inner {
+  width: 100%; margin: 0 auto;
+  padding: 0 var(--pg-pad);
+  display: flex; align-items: center; gap: 16px;
+}
+.app.sidebar-collapsed .pg-topbar-inner { padding-left: calc(var(--pg-pad) + 20px); }
+
+.pg-addwrap { margin-left: auto; position: relative; }
+.pg-add {
+  display: inline-flex; align-items: center; gap: 9px;
+  height: 34px; padding: 0 15px;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-pill);
+  background: var(--bg-card); color: var(--txt-primary);
+  font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 150ms var(--tn), transform 130ms var(--sp-s);
+}
+.pg-add svg { width: 12px; height: 12px; transition: transform 200ms var(--sp-m); }
+.pg-add:hover { background: var(--hover); }
+.pg-add:active { transform: scale(0.96); }
+.pg-addwrap.open .pg-add svg { transform: rotate(180deg); }
+
+/* ============ FLOATING MENU (add + per-item) ============ */
+.pg-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 30;
+  min-width: 224px; display: flex; flex-direction: column; gap: 2px;
+  padding: 6px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-panel);
+  border-radius: var(--radius-field);
+  box-shadow: var(--shadow-panel);
+  opacity: 0; transform: scale(0.97); transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 160ms var(--tn), transform 200ms var(--sp-m);
+}
+.pg-addwrap.open .pg-menu, .pg-menu.open { opacity: 1; transform: none; pointer-events: auto; }
+.pg-menu-it {
+  display: flex; align-items: center; gap: 11px;
+  min-height: 35px; padding: 0 12px;
+  border: 0; border-radius: var(--radius-btn); background: transparent; text-align: left;
+  font-family: var(--font-ui); font-size: 13px; color: var(--txt-primary);
+  cursor: pointer; white-space: nowrap;
+  opacity: 0; transform: translateY(-3px);
+  transition: background 120ms ease, transform 130ms var(--sp-s);
+}
+.pg-addwrap.open .pg-menu-it, .pg-menu.open .pg-menu-it { opacity: 1; transform: none; transition: background 120ms ease, opacity 200ms var(--tn) var(--d, 0ms), transform 260ms var(--sp-m) var(--d, 0ms); }
+.pg-menu-it:hover { background: var(--hover); }
+.pg-menu-it:active { transform: scale(0.98); background: var(--press); }
+.pg-menu-it svg { width: 15px; height: 15px; color: var(--txt-section); flex-shrink: 0; }
+.pg-menu-it.danger, .pg-menu-it.danger svg { color: var(--txt-strong); }
+
+/* ============ SCROLL + COLUMN ============ */
+.pg-scroll { flex: 1; min-height: 0; overflow-y: auto; position: relative; z-index: 1; }
+.pg-col { max-width: var(--pg-col); margin: 0 auto; padding: 8px var(--pg-pad) 120px; display: flex; flex-direction: column; }
+.app.sidebar-collapsed .pg-col { padding-left: calc(var(--pg-pad) + 20px); }
+
+/* hero — big plain sans title (§13: the pixel wordmark stays reserved) */
+.pg-hero { margin: 14px 0 24px; }
+.pg-hero h1 { margin: 0; font-family: var(--font-ui); font-size: 27px; font-weight: 600; letter-spacing: -0.5px; color: var(--txt-bright); line-height: 1.15; }
+.pg-hero .pg-sub { margin: 9px 0 0; font-size: 13.5px; color: var(--txt-dim); letter-spacing: 0.1px; text-wrap: pretty; }
+
+/* search — bordered field, focus-halo (§15 search ruling) */
+.pg-search {
+  display: flex; align-items: center; gap: 11px;
+  height: 44px; padding: 0 15px;
+  background: var(--input-bg); border: 1px solid var(--line-soft); border-radius: var(--radius-field);
+  transition: box-shadow 150ms var(--tn), border-color 150ms var(--tn);
+}
+.pg-search:focus-within { box-shadow: var(--focus-halo); border-color: var(--line-strong); }
+.pg-search svg { width: 15px; height: 15px; color: var(--txt-section); flex-shrink: 0; }
+.pg-search input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-family: var(--font-ui); font-size: 13.5px; color: var(--txt-primary); }
+.pg-search input::placeholder { color: var(--txt-placeholder); }
+
+/* ============ SECTION HEADS — plain sans, like the list they own ============ */
+.pg-bar { display: flex; align-items: center; gap: 10px; padding: 0 10px; }
+.pg-bar h2 { margin: 0; font-family: var(--font-ui); font-size: 17px; font-weight: 600; letter-spacing: -0.3px; color: var(--txt-bright); }
+.pg-gear {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; margin-left: auto;
+  border: 0; border-radius: var(--radius-btn); background: transparent;
+  color: var(--icon-idle); cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, transform 130ms var(--sp-s);
+}
+.pg-gear svg { width: 16px; height: 16px; }
+.pg-gear:hover { background: var(--hover); color: var(--icon-hover); }
+.pg-gear:active { transform: scale(0.9); }
+
+/* ============ INSTALLED STRIP — icon tiles, click for detail ============ */
+.pg-inst { margin-top: 26px; }
+.pg-strip { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; padding: 0 10px; }
+.pg-chip-tile {
+  position: relative;
+  width: 44px; height: 44px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: 0; border-radius: var(--radius-tool, 12px);
+  background: var(--surface-subtle);
+  cursor: pointer;
+  transition: background 130ms ease, transform 130ms var(--sp-m);
+}
+.pg-chip-tile svg { width: 19px; height: 19px; }
+.pg-chip-tile:hover { background: var(--hover); transform: translateY(-2px); }
+.pg-chip-tile:active { transform: scale(0.94); }
+.pg-chip-tile[data-state="off"] { color: var(--txt-section); }
+.pg-chip-tile[data-state="off"] svg { opacity: 0.75; }
+/* status tick — top-right, ink only (§4) */
+.pg-chip-tile .tick { position: absolute; top: -2px; right: -2px; width: 9px; height: 9px; border-radius: 50%; box-shadow: 0 0 0 2.5px var(--bg-main); }
+.pg-chip-tile .tick.err { background: var(--txt-strong); }
+.pg-chip-tile .tick.off { background: transparent; box-shadow: 0 0 0 2.5px var(--bg-main), inset 0 0 0 1.5px var(--txt-section); }
+
+/* ============ PAGE TABS — Plugins | Skills (topbar, left) ============ */
+.pg-pages { display: flex; align-items: center; gap: 4px; }
+.pg-ftab {
+  height: 30px; padding: 0 13px;
+  border: 0; border-radius: var(--radius-pill); background: transparent;
+  font-family: var(--font-ui); font-size: 13px; color: var(--txt-dim);
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 150ms var(--tn), color 150ms var(--tn), transform 130ms var(--sp-s);
+}
+.pg-ftab:hover:not(.on) { color: var(--txt-primary); background: var(--hover); }
+.pg-ftab:active { transform: scale(0.95); }
+.pg-ftab.on { background: var(--active-bg); color: var(--txt-bright); font-weight: 600; }
+
+/* ============ SECTIONS OF FLAT ROWS — two-column grid ============ */
+.pg-sections { display: flex; flex-direction: column; }
+.pg-board { margin-top: 30px; padding-top: 26px; border-top: 1px solid var(--line-soft); }
+.pg-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: 22px; row-gap: 2px; margin-top: 10px; }
+
+.pg-row {
+  position: relative;
+  display: grid; grid-template-columns: auto 1fr auto auto; gap: 13px; align-items: center;
+  padding: 11px 8px 11px 10px; min-width: 0;
+  border-radius: var(--radius-card); background: transparent;
+  cursor: pointer;
+  transition: background 130ms ease;
+}
+.pg-row:hover { background: var(--hover); }
+.pg-row[data-state="off"] .pg-tile,
+.pg-row[data-state="off"] .pg-row-main { opacity: 0.72; }
+
+/* icon tile — small well, tinted line-art mark */
+.pg-tile {
+  width: 38px; height: 38px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-tool, 12px);
+  background: var(--surface-subtle);
+}
+.pg-tile svg { width: 17px; height: 17px; }
+
+.pg-row-main { min-width: 0; display: flex; flex-direction: column; }
+.pg-row-main .nm { display: flex; align-items: baseline; gap: 8px; font-size: 14px; font-weight: 600; letter-spacing: -0.2px; color: var(--txt-bright); line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-row-main .nm .vr { font-family: var(--font-code); font-size: 11px; font-weight: 400; color: var(--txt-section); flex-shrink: 0; }
+.pg-row-main .ds { margin-top: 2px; font-size: 12.5px; color: var(--txt-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pg-row-main .ds .warn { color: var(--txt-strong); }
+.pg-row-main .ds .live { font-family: var(--font-code); font-size: 11.5px; color: var(--pg-alive); }
+.pg-row-main .ds .live .cursor { animation: pg-caret 1.15s steps(2) infinite; }
+@keyframes pg-caret { 50% { opacity: 0.2; } }
+
+/* install button — quiet bordered pill */
+.pg-install {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 30px; padding: 0 14px;
+  border: 1px solid var(--line-soft); border-radius: var(--radius-pill);
+  background: var(--bg-card); color: var(--txt-primary);
+  font-family: var(--font-ui); font-size: 12.5px; font-weight: 500;
+  cursor: pointer; user-select: none; white-space: nowrap;
+  transition: background 150ms var(--tn), transform 130ms var(--sp-s);
+}
+.pg-install:hover { background: var(--hover); }
+.pg-install:active { transform: scale(0.95); }
+/* already installed — quiet check label */
+.pg-installed { display: inline-flex; align-items: center; gap: 6px; padding-right: 6px; font-size: 12.5px; color: var(--txt-section); white-space: nowrap; }
+.pg-installed svg { width: 13px; height: 13px; }
+
+/* installed check — the quiet tick on Skills rows */
+.pg-check { display: flex; color: var(--txt-section); }
+.pg-check svg { width: 15px; height: 15px; }
+
+/* "…" per-row menu — appears on row hover (same reveal as Automations) */
+.pg-itemmenu { position: relative; align-self: center; }
+.pg-dots { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: var(--radius-btn); background: transparent; color: var(--icon-idle); cursor: pointer; opacity: 0; transition: background 120ms ease, color 120ms ease, opacity 130ms ease, transform 130ms var(--sp-s); }
+.pg-row:hover .pg-dots, .pg-row:focus-within .pg-dots, .pg-dots:focus-visible { opacity: 1; }
+.pg-itemmenu:has(.pg-menu.open) .pg-dots { opacity: 1; }
+.pg-dots:hover { background: var(--press); color: var(--icon-hover); }
+.pg-dots:active { transform: scale(0.90); }
+.pg-dots svg { width: 16px; height: 16px; }
+.pg-itemmenu .pg-menu { top: calc(100% - 2px); }
+
+/* ============ "SEE … MORE" EXPANDER ============ */
+.pg-more {
+  grid-column: 1 / -1;
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 8px 11px 10px;
+  border: 0; border-radius: var(--radius-card); background: transparent; text-align: left;
+  font-family: var(--font-ui); font-size: 13px; color: var(--txt-dim);
+  cursor: pointer;
+  transition: background 130ms ease, color 130ms ease;
+}
+.pg-more:hover { background: var(--hover); color: var(--txt-primary); }
+.pg-more-ics { display: flex; flex-shrink: 0; }
+.pg-more-ics .mi {
+  width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+  border-radius: 8px; background: var(--surface-subtle);
+  box-shadow: 0 0 0 2px var(--bg-main);
+}
+.pg-more-ics .mi + .mi { margin-left: -6px; }
+.pg-more-ics .mi svg { width: 12px; height: 12px; }
+
+.pg-none { display: none; padding: 44px 0; text-align: center; font-family: var(--font-ui); font-size: 13px; color: var(--txt-faint); }
+.pg-none.show { display: block; }
+
+/* ============ DENSITY (Tweak) ============ */
+.pg-view[data-pg-density="compact"] .pg-row { padding: 8px 8px 8px 10px; }
+.pg-view[data-pg-density="compact"] .pg-tile { width: 34px; height: 34px; }
+.pg-view[data-pg-density="compact"] .pg-tile svg { width: 15px; height: 15px; }
+.pg-view[data-pg-density="compact"] .pg-chip-tile { width: 40px; height: 40px; }
+.pg-view[data-pg-density="compact"] .pg-row-main .ds { margin-top: 1px; }
+
+/* ============ NARROW ============ */
+@media (max-width: 980px) { .pg-grid { grid-template-columns: 1fr; } }
+
+/* ============ REDUCED MOTION (dual, §5) ============ */
+html[data-motion="reduce"] .pg-view *,
+html[data-motion="reduce"] .pg-detail, html[data-motion="reduce"] .pg-scrim { transition: none !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .pg-view *, .pg-detail, .pg-scrim { transition: none !important; animation: none !important; }
+}

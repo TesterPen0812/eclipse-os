@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eclipse OS — Automations</title>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+<link rel="apple-touch-icon" href="assets/favicon-180.png">
+
+<!-- Page-local theme bootstrap. Opens in light "Soft Surface" (minimal) by
+     default and persists any Tweaks-panel theme switch under its OWN key
+     ('a2-theme') so it NEVER clobbers the shared 'sb-theme' the rest of the
+     app relies on. Reduce-motion still honors the global 'sb-reduce'. -->
+<script>
+(function () {
+  var r = document.documentElement;
+  var APP = { minimal:'light', daybreak:'light', atlas:'light', dark:'dark', midnight:'dark', amber:'dark' };
+  var t = 'minimal';
+  try { var s = localStorage.getItem('a2-theme'); if (s && APP[s]) t = s; } catch (e) {}
+  r.setAttribute('data-theme', t);
+  r.setAttribute('data-appearance', APP[t]);
+  r.style.colorScheme = APP[t];
+  try { r.setAttribute('data-motion', localStorage.getItem('sb-reduce') === 'on' ? 'reduce' : 'auto'); } catch (e) {}
+})();
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fragment+Mono&display=swap" rel="stylesheet">
+
+<!-- canonical design-system tokens -->
+<link rel="stylesheet" href="styles.css">
+<!-- automations surfaces + overlays -->
+<link rel="stylesheet" href="automations/au2-core.css">
+<link rel="stylesheet" href="automations/au2-overlays.css">
+<link rel="stylesheet" href="automations/au-suggestions.css">
+
+<style>
+  /* ============================================================
+     APP SHELL — sidebar + main pane. Lifted verbatim from
+     EclipseOS.html so this page reads as a real desktop surface.
+     Theme-agnostic; every value comes from the design-system tokens.
+     ============================================================ */
+  :root { --sidebar-w: 242px; --sb-pad: 16px; --sb-move: 420ms;
+    --sb-shadow: 0 6px 22px -10px color-mix(in srgb, var(--shadow-ink) 20%, transparent),
+                 0 1px 3px color-mix(in srgb, var(--shadow-ink) 6%, transparent); }
+  /* the collapsed rail's raised "island" tone, per theme (matches EclipseOS.html) */
+  :root[data-theme="dark"]     { --sb-float: #262626; }
+  :root[data-theme="midnight"] { --sb-float: #1c1c1f; }
+  :root[data-theme="amber"]    { --sb-float: #221913; }
+  :root[data-theme="atlas"]    { --sb-float: #fbf6ec; }
+  :root[data-theme="daybreak"] { --sb-float: #fffdf9; }
+  :root[data-theme="minimal"]  { --sb-float: #ededec; }
+  [data-appearance="dark"] { --sb-shadow: 0 10px 30px -12px rgba(0,0,0,0.5); }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg-main);
+    font-family: var(--font-ui);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    color: var(--txt-primary);
+    overflow: hidden;
+  }
+  a { color: var(--link, var(--accent)); text-decoration: none; }
+  a:hover { color: var(--txt-bright); }
+
+  .app {
+    position: relative;
+    display: flex;
+    background: var(--bg-side);
+    /* density: render the whole app at 88% (transform keeps editor coords sane) */
+    width: calc(100vw / 0.88);
+    height: calc(100vh / 0.88);
+    transform: scale(0.88);
+    transform-origin: top left;
+  }
+
+  /* sidebar resize handle */
+  .resizer {
+    position: absolute; top: 0; bottom: 0; left: var(--sidebar-w);
+    width: 9px; margin-left: -4px; cursor: col-resize; z-index: 40;
+    transition: left 220ms cubic-bezier(0.22,0.61,0.36,1);
+  }
+  .resizer::after {
+    content: ""; position: absolute; top: 0; bottom: 0; left: 50%;
+    width: 2px; transform: translateX(-1px); background: transparent;
+    transition: background 140ms ease;
+  }
+  .resizer:hover::after, .resizer.active::after { background: var(--line-strong); }
+  .app.resizing, .app.resizing * { user-select: none; }
+  .app.resizing .resizer, .app.resizing .sidebar { transition: none; }
+  .app.sidebar-collapsed .resizer { display: none; }
+
+  /* ============ SIDEBAR — docked rail + temporary corner-peek ============
+     Docked by default (a flush rail in the sidebar tone; the main pane rounds its
+     left corners over it). Collapsed hides it; hovering the screen's LEFT EDGE
+     floats it back as a temporary island (overlay, no push); the toggle pins it.
+     Kept in sync with EclipseOS.html. */
+  .sidebar {
+    position: absolute; z-index: 30;
+    top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: var(--bg-side);
+    display: flex; flex-direction: column; overflow: hidden;
+    border-radius: 0; box-shadow: none;
+    will-change: transform;
+    /* EXPAND (docked rail is the destination): geometry snaps offscreen, then the
+       rail slides back in flush — nothing morphs in flight. */
+    transition: transform var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                opacity 160ms var(--tint, ease),
+                background 0s, border-radius 0s, box-shadow 0s,
+                top 0s, left 0s, bottom 0s;
+  }
+  /* collapsed: adopt the floating-island geometry but slide off-left + fade.
+     COLLAPSE / PEEK-RETRACT: one calm exit at 60% duration; island geometry
+     snaps only after it's hidden. */
+  .app.sidebar-collapsed .sidebar {
+    top: var(--sb-pad); left: var(--sb-pad); bottom: var(--sb-pad);
+    background: var(--sb-float);
+    border-radius: var(--radius-mat, 28px);
+    box-shadow: var(--sb-shadow);
+    opacity: 0;
+    transform: translateX(calc(-100% - var(--sb-pad) - 24px));
+    pointer-events: none;
+    transition: transform calc(var(--sb-move) * 0.6) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                opacity 220ms var(--tint, ease),
+                background 0s linear calc(var(--sb-move) * 0.6),
+                border-radius 0s linear calc(var(--sb-move) * 0.6),
+                box-shadow 0s linear calc(var(--sb-move) * 0.6),
+                top 0s linear calc(var(--sb-move) * 0.6),
+                left 0s linear calc(var(--sb-move) * 0.6),
+                bottom 0s linear calc(var(--sb-move) * 0.6);
+  }
+  /* peek: slide the island in as a temporary overlay (no push) — spring-L in */
+  .app.sidebar-collapsed.sidebar-peek .sidebar {
+    opacity: 1; transform: translateX(0); pointer-events: auto;
+    transition: transform var(--sb-move) var(--spring-l, cubic-bezier(0.34,1.10,0.36,1)),
+                opacity 140ms var(--tint, ease);
+  }
+  /* pin from peek: the island visibly docks into the rail (JS holds .sb-docking) */
+  .app.sb-docking .sidebar {
+    transition: transform var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                opacity 120ms var(--tint, ease),
+                background var(--dur-m, 300ms) var(--tint, ease),
+                border-radius var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                box-shadow var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                top var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                left var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                bottom var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1));
+  }
+  .app.no-sb-anim .sidebar, .app.no-sb-anim .main,
+  .app.no-sb-anim .side-toggle, .app.no-sb-anim .resizer { transition: none !important; }
+
+  .side-toggle {
+    position: absolute; left: 8px; top: 8px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 7px; color: var(--icon-idle); cursor: pointer; z-index: 50;
+    transition: background 150ms cubic-bezier(0.4,0,0.2,1), color 150ms cubic-bezier(0.4,0,0.2,1),
+                left var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                top var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                transform 130ms cubic-bezier(0.34,1.4,0.64,1);
+  }
+  /* collapsed → the toggle rides out to the peek island's corner (quicker, with the exit) */
+  .app.sidebar-collapsed .side-toggle {
+    left: calc(var(--sb-pad) + 8px); top: calc(var(--sb-pad) + 8px);
+    transition: background 150ms cubic-bezier(0.4,0,0.2,1), color 150ms cubic-bezier(0.4,0,0.2,1),
+                left calc(var(--sb-move) * 0.6) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                top calc(var(--sb-move) * 0.6) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                transform 130ms cubic-bezier(0.34,1.4,0.64,1);
+  }
+  .side-toggle:hover { background: var(--hover); color: var(--icon-hover); }
+  .side-toggle:active { transform: scale(0.90); }
+  .side-toggle svg { width: 17px; height: 17px; }
+
+  .side-toolbar {
+    height: 44px; flex-shrink: 0;
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 8px 0 44px;
+  }
+  .tbtn {
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 7px; color: var(--icon-idle); cursor: pointer;
+  }
+  .tbtn:hover { background: var(--hover); color: var(--icon-hover); }
+  .tbtn svg { width: 17px; height: 17px; }
+  .tbtn.disabled { color: var(--icon-disabled); }
+  .tbtn.disabled:hover { background: transparent; color: var(--icon-disabled); }
+
+  .side-scroll { flex: 1; overflow-y: auto; padding: 2px 8px 4px; scrollbar-width: thin; scrollbar-color: var(--scroll-thumb) transparent; }
+  .side-scroll::-webkit-scrollbar { width: 11px; }
+  .side-scroll::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 8px; border: 2px solid transparent; border-right-width: 3px; background-clip: padding-box; }
+  .side-scroll::-webkit-scrollbar-thumb:hover { background: var(--line-strong); background-clip: padding-box; }
+  .side-scroll::-webkit-scrollbar-track { background: transparent; }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    height: 33px; padding: 0 7px; border-radius: 8px;
+    color: var(--txt-primary); font-size: 14px; cursor: pointer; white-space: nowrap;
+    transition: background 110ms ease;
+  }
+  .nav-item:hover { background: var(--hover); }
+  .nav-item:active { background: var(--press); }
+  .nav-item svg { width: 16px; height: 16px; color: var(--icon-nav); flex-shrink: 0; }
+  .section-label svg.drive { width: 15px; height: 15px; color: var(--txt-dim); }
+  :where(button.side-toggle, button.tbtn, button.ic) {
+    font: inherit; color: inherit; background: none; border: 0; padding: 0;
+    -webkit-appearance: none; appearance: none; cursor: pointer; outline-offset: 2px;
+  }
+
+  .section-label { font-size: 12px; color: var(--txt-section); padding: 16px 7px 6px; font-weight: 400; }
+
+  .conn-head {
+    display: flex; align-items: center; gap: 10px;
+    height: 31px; padding: 0 7px; border-radius: 8px; cursor: pointer;
+    font-size: 14px; color: var(--txt-primary); transition: background 110ms ease;
+  }
+  .conn-head:hover { background: var(--hover); }
+  .conn-head svg { width: 16px; height: 16px; color: var(--icon-idle); flex-shrink: 0; }
+  /* connection name ellipsizes instead of wrapping (kept in sync with EclipseOS) */
+  .conn-head { min-width: 0; }
+  .conn-head > span:not(.dot) { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green, var(--live)); flex-shrink: 0; }
+  .conn-dot { margin-left: 8px; }
+
+  .child-list { padding-left: 24px; }
+  .row {
+    display: flex; align-items: center; height: 31px; padding: 0 7px 0 27px;
+    border-radius: 8px; cursor: pointer; font-size: 13.5px; color: var(--txt-item);
+    transition: background 110ms ease;
+  }
+  .row.child { padding: 0 7px; margin-bottom: 2px; }
+  .row:hover, .row.child:hover { background: var(--hover); }
+  .row.active, .nav-item.active { background: var(--active-bg); }
+  .row .label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .kbd { font-size: 12px; color: var(--kbd-fg); background: var(--kbd-bg); padding: 1.5px 6px; border-radius: var(--radius-kbd); margin-left: 8px; letter-spacing: 0.3px; }
+  .time { font-size: 12.5px; color: var(--txt-dim); margin-left: 8px; flex-shrink: 0; }
+  .show-more { font-size: 13px; color: var(--txt-dim); padding: 7px; cursor: pointer; transition: color 110ms ease; }
+  .show-more:hover { color: var(--txt-mid); }
+  .section-label.chats { margin-top: 23px; }
+  .row.chat-row { padding-left: 5px; }
+
+  .side-usage { flex-shrink: 0; margin: 0 10px; padding: 12px 4px 14px; border-top: 1px solid var(--line-soft); }
+  .side-usage .su-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; color: var(--txt-dim); margin-bottom: 6px; }
+  .side-usage .su-row span:last-child { color: var(--txt-mid); }
+  .side-usage .su-bar { height: 3px; border-radius: 2px; background: var(--track); overflow: hidden; }
+  .side-usage .su-bar span { display: block; height: 100%; border-radius: 2px; background: var(--txt-dim); }
+
+  .settings-bar {
+    flex-shrink: 0; height: 48px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px 0 9px; gap: 8px;
+  }
+  .settings-left { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 8px; border-radius: 8px; color: var(--txt-primary); font-size: 14px; cursor: pointer; transition: background 110ms ease; }
+  .settings-left:hover { background: var(--hover); }
+  .settings-left svg { width: 19px; height: 19px; color: var(--icon-nav); }
+  .settings-bar .ic { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 8px; color: var(--icon-idle); cursor: pointer; transition: background 110ms ease, color 110ms ease; }
+  .settings-bar .ic:hover { background: var(--hover); color: var(--icon-hover); }
+  .settings-bar .ic svg { width: 17px; height: 17px; }
+
+  /* press + hover-lift tiers (shared app feel) */
+  .nav-item, .row, .conn-head, .settings-left, .show-more, .side-toggle, .tbtn, .settings-bar .ic {
+    transition: background 150ms cubic-bezier(0.4,0,0.2,1), color 150ms cubic-bezier(0.4,0,0.2,1), transform 130ms cubic-bezier(0.34,1.3,0.44,1);
+  }
+  .nav-item:active, .row:active, .conn-head:active, .settings-left:active { transform: scale(0.96); }
+  .show-more:active { transform: scale(0.94); }
+  .tbtn:active, .settings-bar .ic:active { transform: scale(0.90); }
+
+  /* signature nav icon flourishes on hover (animate the glyph only) */
+  .nav-item svg, .conn-head svg, .settings-left svg { transition: transform 200ms cubic-bezier(0.34,1.3,0.44,1); }
+  #newChat:hover svg { animation: fx-write 0.6s ease; }
+  .nav-item.nv-search:hover svg { animation: fx-magnify 0.6s ease; }
+  .nav-item.nv-workboard:hover svg path:nth-of-type(1) { animation: fx-sortA 0.55s ease; }
+  .nav-item.nv-workboard:hover svg path:nth-of-type(2) { animation: fx-sortB 0.55s ease 0.06s; }
+  .nav-item.nv-auto svg { transform-origin: 12px 12px; }
+  .nav-item.nv-auto:hover svg path:nth-of-type(2) { animation: fx-hands 3s cubic-bezier(0.4,0,0.2,1); transform-origin: 12px 12px; }
+  .nav-item.nv-plugins:hover svg { animation: fx-plug 0.55s ease; }
+  @keyframes fx-plug { 45% { transform: translateY(1.6px); } }
+  @keyframes fx-write { 40% { transform: translate(1px,-1px) rotate(-6deg); } }
+  @keyframes fx-magnify { 40% { transform: scale(1.12); } }
+  @keyframes fx-sortA { 45% { transform: translateX(2px); } }
+  @keyframes fx-sortB { 45% { transform: translateX(-2px); } }
+  @keyframes fx-hands { 0% { transform: rotate(0); } 12% { transform: rotate(300deg); } 100% { transform: rotate(360deg); } }
+
+  /* ============ MAIN PANE ============ */
+  .main {
+    flex: 1; position: relative; display: flex; flex-direction: column;
+    background-color: var(--bg-main); background-image: var(--main-bg-image);
+    border-radius: 18px 0 0 18px;
+    box-shadow: 0 0 0 1px var(--bevel-2);
+    margin-left: calc(var(--sidebar-w) - 1px); overflow: hidden; min-width: 0;
+    transition: margin-left var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                border-radius var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                box-shadow var(--sb-move) var(--calm, cubic-bezier(0.22,1,0.36,1));
+  }
+  .app.sidebar-collapsed .main {
+    margin-left: 0; border-radius: 0; box-shadow: none;
+    transition: margin-left calc(var(--sb-move) * 0.6) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                border-radius calc(var(--sb-move) * 0.6) var(--calm, cubic-bezier(0.22,1,0.36,1)),
+                box-shadow calc(var(--sb-move) * 0.6) var(--calm, cubic-bezier(0.22,1,0.36,1));
+  }
+
+  /* ============ THE MAT (named surface motif) ============ */
+  :root {
+    --mat-bg: var(--surface-subtle);
+    --mat-panel: var(--bg-card);
+    --mat-line: var(--line-soft);
+    --mat-radius: var(--radius-mat);
+    --mat-panel-radius: var(--radius-card);
+    --mat-lift: 0 1px 2px color-mix(in srgb, var(--shadow-ink) 6%, transparent), 0 4px 10px -4px color-mix(in srgb, var(--shadow-ink) 12%, transparent);
+    --mat-lift-hover: 0 2px 4px color-mix(in srgb, var(--shadow-ink) 7%, transparent), 0 10px 24px -6px color-mix(in srgb, var(--shadow-ink) 18%, transparent);
+  }
+  [data-appearance="dark"] {
+    --mat-lift: 0 4px 12px -4px rgba(0,0,0,0.5);
+    --mat-lift-hover: 0 10px 26px -6px rgba(0,0,0,0.6);
+  }
+  .mat { background: var(--mat-bg); border-radius: var(--mat-radius); padding: 16px; }
+  .mat-panel { background: var(--mat-panel); border: 1px solid var(--mat-line); border-radius: var(--mat-panel-radius); box-shadow: var(--mat-lift); }
+  .mat-panel.lift { border-color: transparent; transition: box-shadow 150ms ease, transform 130ms cubic-bezier(0.34,1.4,0.64,1); }
+  .mat-panel.lift:hover { box-shadow: var(--mat-lift-hover); transform: translateY(-2px); }
+  /* a mat nested inside a white panel steps one shade darker */
+  .mat-panel .mat, .mat-panel .mat-tray { --mat-bg: color-mix(in srgb, var(--surface-subtle) 100%, var(--shadow-ink) 4%); }
+
+  /* generic accent focus ring for keyboard users (Brief 08) */
+  .app :focus-visible { outline: 1.5px solid var(--focus-ring); outline-offset: 2px; border-radius: var(--radius-btn); }
+
+  .a2-mount { flex: 1; min-width: 0; min-height: 0; display: flex; }
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <button type="button" class="side-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.4" width="17.2" height="15.2" rx="4.6"/><path d="M9.6 4.4v15.2"/></svg>
+  </button>
+  <div class="resizer" id="resizer" title="Drag to resize · double-click to reset"></div>
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="side-toolbar">
+      <button type="button" class="tbtn" aria-label="Go back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 4.6 4.4 8.8l5.1 4.2"/><path d="M4.4 8.8h9.1a6.1 6.1 0 0 1 0 12.2H8.4"/></svg>
+      </button>
+      <button type="button" class="tbtn disabled" aria-label="Go forward" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4.6 19.6 8.8l-5.1 4.2"/><path d="M19.6 8.8h-9.1a6.1 6.1 0 0 0 0 12.2h5.1"/></svg>
+      </button>
+    </div>
+
+    <div class="side-scroll">
+      <a class="nav-item" id="newChat" href="EclipseOS.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4.9H7.1a2.9 2.9 0 0 0-2.9 2.9v9.1a2.9 2.9 0 0 0 2.9 2.9h9.1a2.9 2.9 0 0 0 2.9-2.9V12"/><path d="M17.8 4.2a2.12 2.12 0 0 1 3 3l-7.9 7.9-4.1 1.1 1.1-4.1 7.9-7.9Z"/></svg>
+        <span>New chat</span>
+      </a>
+      <div class="nav-item nv-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11.2" cy="11.2" r="7"/><path d="m16.4 16.4 4.2 4.2"/></svg>
+        <span>Search</span>
+      </div>
+      <a class="nav-item nv-workboard" href="EclipseOS.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.4" y="4.4" width="17.2" height="15.2" rx="3.4"/><path d="M9.2 4.4v15.2"/><path d="M14.8 4.4v15.2"/></svg>
+        <span>Workboard</span>
+      </a>
+      <div class="nav-item nv-auto active">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.8"/><path d="M12 7.6V12l3.2 1.9"/></svg>
+        <span>Automations</span>
+      </div>
+      <a class="nav-item nv-plugins" href="EclipseOS.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3.6v3.9"/><path d="M15 3.6v3.9"/><path d="M7 7.5h10v3.8a5 5 0 0 1-10 0V7.5Z"/><path d="M12 16.3v4.1"/></svg>
+        <span>Plugins</span>
+      </a>
+
+      <div class="section-label">Connections</div>
+      <div class="conn-head">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.8"/><path d="M3.2 12h17.6"/><path d="M12 3.2c2.4 2.5 3.6 5.4 3.6 8.8s-1.2 6.3-3.6 8.8c-2.4-2.5-3.6-5.4-3.6-8.8s1.2-6.3 3.6-8.8z"/></svg>
+        <span>macbook-air-eclipse</span>
+        <span class="dot conn-dot"></span>
+      </div>
+      <div class="child-list">
+        <div class="row child"><span class="label">my box</span><span class="kbd">⌘1</span></div>
+        <div class="row child"><span class="label">@Remotion Create an ani…</span><span class="kbd">⌘2</span></div>
+        <div class="row child"><span class="label">Continue Workflow OS / O…</span><span class="kbd">⌘3</span></div>
+      </div>
+      <div class="show-more">Show more</div>
+
+      <div class="section-label" style="display:flex;align-items:center;gap:9px;">
+        <svg class="drive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.2" y="7.8" width="17.6" height="8.4" rx="2.8"/><path d="M6.6 12h6.6"/><circle cx="17.1" cy="12" r="1.3" fill="currentColor" stroke="none"/></svg>
+        <span>Local</span>
+      </div>
+      <div class="row"><span class="label">Investigate Mac slowdown</span><span class="time">2w</span></div>
+      <div class="row"><span class="label">Design MyBox V1 UI</span><span class="time">2w</span></div>
+      <div class="show-more">Show more</div>
+
+      <div class="section-label chats">Chats</div>
+      <div class="row chat-row"><span class="label">Start SSH connection</span><span class="time">3h</span></div>
+      <div class="row chat-row"><span class="label">Set up for Eclipse</span><span class="time">1d</span></div>
+      <div class="row chat-row"><span class="label">Set up benchmark branch</span><span class="time">1w</span></div>
+      <div class="row chat-row"><span class="label">Prepare mobile PWA benchma…</span><span class="time">1w</span></div>
+      <div class="row chat-row"><span class="label">Fix Claude hooks settings</span><span class="time">2w</span></div>
+      <div class="row chat-row"><span class="label">Check design update</span><span class="time">2w</span></div>
+    </div>
+
+    <div class="side-usage">
+      <div class="su-row"><span>Weekly limit</span><span>41% left</span></div>
+      <div class="su-bar"><span style="width:41%"></span></div>
+    </div>
+
+    <div class="settings-bar">
+      <a class="settings-left" href="Settings.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2.9 1.8 1.5 2.3-.4 1 2.2 2.2.7-.2 2.4 1.6 1.7-1.6 1.7.2 2.4-2.2.7-1 2.2-2.3-.4-1.8 1.5-1.8-1.5-2.3.4-1-2.2-2.2-.7.2-2.4L3.3 12l1.6-1.7-.2-2.4 2.2-.7 1-2.2 2.3.4L12 2.9Z"/><circle cx="12" cy="12" r="3"/></svg>
+        <span>Settings</span>
+      </a>
+      <a class="ic" href="Automations Mobile.html" title="Open on mobile" aria-label="Open on mobile">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="3.2" width="12" height="17.6" rx="3.1"/><circle cx="12" cy="17.1" r="1.3" fill="currentColor" stroke="none"/></svg>
+      </a>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <div class="a2-mount">
+      <div class="a2-view" id="a2Root" data-screen-label="Automations — desktop"></div>
+    </div>
+  </main>
+</div>
+
+<!-- schedule engine + seed data (DOM-free; shared with the rest of the app) -->
+<script src="automations/au-cron.js?v=2"></script>
+<!-- reusable suggestions section (template data + renderer) -->
+<script src="automations/au-suggestions.js"></script>
+<!-- the automations view + overlays + tweaks -->
+<script src="automations/au2.js"></script>
+
+<!-- shell behaviors: sidebar collapse + resize (self-contained, page-local keys) -->
+<script>
+(function () {
+  var app = document.getElementById('app');
+  var toggle = document.getElementById('sidebarToggle');
+  var resizer = document.getElementById('resizer');
+  var MIN = 180, MAX = 380, DEFAULT_W = 242, COLLAPSE_AT = 150;
+  function clampW(w) { return Math.max(MIN, Math.min(MAX, w)); }
+  var sidebar = document.querySelector('.sidebar');
+  app.classList.add('no-sb-anim');
+  try {
+    var sw = parseInt(localStorage.getItem('a2-sidebar-w'), 10);
+    if (sw) app.style.setProperty('--sidebar-w', clampW(sw) + 'px');
+    if (localStorage.getItem('a2-sidebar-collapsed') === '1') app.classList.add('sidebar-collapsed');
+  } catch (e) {}
+  requestAnimationFrame(function(){ requestAnimationFrame(function(){ app.classList.remove('no-sb-anim'); }); });
+  toggle.addEventListener('click', function () {
+    var on = !app.classList.contains('sidebar-collapsed');
+    if (!on && app.classList.contains('sidebar-peek')) {
+      // pinning the peek island forward — let the geometry morph read as docking
+      app.classList.add('sb-docking');
+      clearTimeout(toggle._dockT);
+      toggle._dockT = setTimeout(function(){ app.classList.remove('sb-docking'); }, 470);
+    }
+    app.classList.toggle('sidebar-collapsed', on);
+    if (!on) app.classList.remove('sidebar-peek');   // pinning it forward clears any peek
+    try { localStorage.setItem('a2-sidebar-collapsed', on ? '1' : '0'); } catch (e) {}
+  });
+
+  // temporary corner-peek — hover the screen's LEFT EDGE to float the collapsed rail
+  // back in as an island; it retracts when the cursor leaves. The toggle pins it.
+  (function(){
+    var PEEK_IN = 22, PEEK_OUT = 26, closeTimer = null;
+    function collapsed(){ return app.classList.contains('sidebar-collapsed'); }
+    function peeking(){ return app.classList.contains('sidebar-peek'); }
+    function cancelClose(){ if (closeTimer){ clearTimeout(closeTimer); closeTimer = null; } }
+    function openPeek(){ cancelClose(); if (collapsed()) app.classList.add('sidebar-peek'); }
+    function closePeek(){ cancelClose(); app.classList.remove('sidebar-peek'); }
+    function scheduleClose(){ cancelClose(); closeTimer = setTimeout(function(){ app.classList.remove('sidebar-peek'); }, 180); }
+    document.addEventListener('mousemove', function(e){
+      if (!collapsed()){ if (peeking()) closePeek(); return; }
+      var x = e.clientX, y = e.clientY;
+      if (!peeking()){ if (x <= PEEK_IN) openPeek(); return; }
+      var r = sidebar.getBoundingClientRect();
+      var inside = x >= r.left - PEEK_OUT && x <= r.right + PEEK_OUT &&
+                   y >= r.top - PEEK_OUT && y <= r.bottom + PEEK_OUT;
+      if (inside) cancelClose(); else scheduleClose();
+    });
+    sidebar.addEventListener('mouseenter', function(){ if (collapsed()) openPeek(); });
+    sidebar.addEventListener('mouseleave', function(){ if (peeking()) scheduleClose(); });
+    document.documentElement.addEventListener('mouseleave', function(){ if (peeking()) scheduleClose(); });
+  })();
+  var startX = 0, startW = 0;
+  function onMove(e) {
+    var raw = startW + (e.clientX - startX) / 0.88;
+    if (raw < COLLAPSE_AT) { app.classList.add('sidebar-collapsed'); }
+    else { app.classList.remove('sidebar-collapsed'); app.style.setProperty('--sidebar-w', clampW(raw) + 'px'); }
+  }
+  function onUp() {
+    app.classList.remove('resizing'); resizer.classList.remove('active');
+    document.removeEventListener('mousemove', onMove);
+    document.removeEventListener('mouseup', onUp);
+    var collapsed = app.classList.contains('sidebar-collapsed');
+    try {
+      localStorage.setItem('a2-sidebar-collapsed', collapsed ? '1' : '0');
+      if (!collapsed) localStorage.setItem('a2-sidebar-w', parseInt(getComputedStyle(document.querySelector('.sidebar')).width, 10));
+    } catch (e) {}
+  }
+  resizer.addEventListener('mousedown', function (e) {
+    if (app.classList.contains('sidebar-collapsed')) return;
+    e.preventDefault();
+    startX = e.clientX; startW = parseInt(getComputedStyle(document.querySelector('.sidebar')).width, 10);
+    app.classList.add('resizing'); resizer.classList.add('active');
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+  resizer.addEventListener('dblclick', function () {
+    app.style.setProperty('--sidebar-w', DEFAULT_W + 'px');
+    try { localStorage.setItem('a2-sidebar-w', DEFAULT_W); } catch (e) {}
+  });
+
+  // deep-link wiring: hopping back into the shell lands on the right view
+  function armView(sel, view) {
+    var el = document.querySelector(sel);
+    if (el) el.addEventListener('click', function () { try { localStorage.setItem('sb-view', view); } catch (e) {} });
+  }
+  armView('#newChat', 'home');
+  armView('.nav-item.nv-workboard', 'workboard');
+  armView('.nav-item.nv-plugins', 'plugins');
+})();
+</script>
+
+</body>
+</html>

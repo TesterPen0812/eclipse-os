@@ -1,0 +1,20 @@
+{
+  "name": "eclipse-os",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "check": "pnpm run verify",
+    "verify": "pnpm run harness:test && pnpm run harness:typecheck && pnpm --filter @eclipse-os/desktop-shell typecheck && pnpm run desktop:build",
+    "desktop:dev": "pnpm --filter @eclipse-os/desktop-shell dev",
+    "desktop:build": "pnpm --filter @eclipse-os/desktop-shell build",
+    "harness:typecheck": "pnpm run harness-core:typecheck && pnpm run harness-eclipse:typecheck",
+    "harness-core:typecheck": "node_modules/.pnpm/node_modules/.bin/tsc -p packages/harness-core/tsconfig.json",
+    "harness-eclipse:typecheck": "node_modules/.pnpm/node_modules/.bin/tsc -p packages/harness-eclipse/tsconfig.json",
+    "harness:test": "node scripts/qa/run-harness-tests.mjs"
+  },
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
+}

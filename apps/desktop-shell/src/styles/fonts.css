@@ -1,0 +1,33 @@
+/* ============================================================================
+   Eclipse OS desktop shell — local font wiring (G5)
+
+   The frozen static authority loaded fonts over the network:
+     - IBM Plex Mono (400/500/600) and Fragment Mono (400) via Google Fonts
+     - Geist Pixel Line (400) via an unpkg @font-face
+
+   The approved G5 font route replaces all runtime CDN font URLs with locally
+   bundled assets, per docs/workflow/FONT_OFFLINE_STRATEGY.md:
+     - IBM Plex Mono / Fragment Mono ship as @fontsource packages (bundled woff2)
+     - Geist Pixel Line is the exact pinned geist@1.7.2 GeistPixel-Line.woff2,
+       vendored locally so Vite bundles it (no runtime unpkg dependency).
+
+   `@import` rules must precede other at-rules per the CSS spec. Font matching is
+   keyed by family name, not declaration order, so this ordering does not change
+   the rendered result versus the static source.
+   ============================================================================ */
+
+/* IBM Plex Mono — UI chrome, nav, controls, metadata, code (weights 400/500/600). */
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+
+/* Fragment Mono — ASCII moon/star field (regular/400). */
+@import "@fontsource/fragment-mono/400.css";
+
+/* Geist Pixel Line — ECLIPSE hero wordmark. Exact pinned geist@1.7.2 asset. */
+@font-face {
+  font-family: "Geist Pixel Line";
+  src: url("../assets/fonts/GeistPixel-Line.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}

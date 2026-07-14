@@ -1,0 +1,15 @@
+{
+  "name": "@eclipse-os/harness-core",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "../../node_modules/.pnpm/node_modules/.bin/tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

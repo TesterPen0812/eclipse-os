@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "rootDir": ".",
+    "outDir": "build/harness-tests",
+    "noEmit": false
+  },
+  "include": [
+    "packages/harness-core/src/**/*.ts",
+    "packages/harness-eclipse/src/**/*.ts"
+  ]
+}
